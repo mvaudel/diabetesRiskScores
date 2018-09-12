@@ -14,17 +14,27 @@
 # Import command line arguments
 args <- commandArgs(TRUE)
 
+# Folder with the files
+fileFolder <- args[1]
+
+# Prefix
+prefix <- args[2]
+
+# Output file
+outputFile <- args[3]
+
 
 ## Script
 
 # List files
-files <- list.files(args[1])
+files <- list.files(fileFolder)
 
 # Filter by prefix
-files <- files[startsWith(files, args[2])]
+files <- files[startsWith(files, prefix)]
 
 # Extract stem
 files <- unique(substring(text = files, first = 1, last = regexpr("\\.[^\\.]*$", files) - 1))
+files <- paste(fileFolder, files, sep = "/")
 
 # Export
-writeLines(files, args[3])
+writeLines(files, outputFile)
