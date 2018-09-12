@@ -27,7 +27,13 @@ $repo/R/plinkFileset.R $directory "T2D_SNPs" $directory/fileset
 
 # Merge
 $plinkFolder/plink \
-        --merge-list $directory/fileset
+        --merge-list $directory/fileset \
+        --out $destination/partnersGrs
+
+# Convert to vcf
+$plinkFolder/plink \
+        --bfile $destination/partnersGrs \
+        --recode vcf \
         --out $destination/partnersGrs
 
 
