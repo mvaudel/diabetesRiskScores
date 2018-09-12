@@ -16,8 +16,8 @@ plinkFolder=/mnt/work/marc/tools/plink1.90b3.36
 # Directory with the plink files
 directory=/mnt/archive/marc/partners/grs/josep
 
-# destination file
-destination=/mnt/archive/marc/partners/grs/merged/partnersGrs
+# destination stem
+destinationStem=/mnt/archive/marc/partners/grs/merged/partnersGrs
 
 
 ## Script
@@ -28,12 +28,12 @@ $repo/R/plinkFileset.R $directory "T2D_SNPs" $directory/fileset
 # Merge
 $plinkFolder/plink \
         --merge-list $directory/fileset \
-        --out $destination/partnersGrs
+        --out $destinationStem
 
 # Convert to vcf
 $plinkFolder/plink \
-        --bfile $destination/partnersGrs \
+        --bfile $destinationStem \
         --recode vcf \
-        --out $destination/partnersGrs
+        --out $destinationStem
 
 
