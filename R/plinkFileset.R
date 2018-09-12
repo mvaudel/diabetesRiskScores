@@ -30,7 +30,7 @@ outputFile <- args[3]
 files <- list.files(fileFolder)
 
 # Filter by prefix
-files <- files[startsWith(files, prefix)]
+files <- files[startsWith(files, prefix) & !endsWith(files, "log")]
 
 # Extract stem
 files <- unique(substring(text = files, first = 1, last = regexpr("\\.[^\\.]*$", files) - 1))
