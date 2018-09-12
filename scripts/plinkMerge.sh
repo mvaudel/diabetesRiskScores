@@ -25,5 +25,9 @@ destination=/mnt/archive/marc/partners/grs/merged/partnersGrs
 # Create file set
 $repo/R/plinkFileset.R $directory "T2D_SNPs" $directory/fileset
 
+# Merge
+$plinkFolder/plink \
+        --merge-list $directory/fileset
+        --out $destination/partnersGrs
 
 
