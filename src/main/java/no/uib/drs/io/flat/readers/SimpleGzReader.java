@@ -1,4 +1,4 @@
-package no.uib.drs.io.flat;
+package no.uib.drs.io.flat.readers;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.zip.GZIPInputStream;
+import no.uib.drs.io.flat.SimpleFileReader;
 import static no.uib.drs.io.Utils.encoding;
 
 /**
@@ -15,7 +16,7 @@ import static no.uib.drs.io.Utils.encoding;
  *
  * @author Marc Vaudel
  */
-public class SimpleGzReader implements AutoCloseable {
+public class SimpleGzReader implements SimpleFileReader {
 
     /**
      * The buffered reader.
@@ -44,11 +45,7 @@ public class SimpleGzReader implements AutoCloseable {
         }
     }
 
-    /**
-     * Reads a line of the file.
-     *
-     * @return a line of the file
-     */
+    @Override
     public String readLine() {
 
         try {

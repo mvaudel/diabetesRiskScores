@@ -28,14 +28,6 @@ public class Variant {
      */
     public final String alt;
     /**
-     * Boolean indicating whether the variant was genotyped.
-     */
-    public final boolean genotyped;
-    /**
-     * The score.
-     */
-    public final double info;
-    /**
      * The estimated maf.
      */
     public final double maf;
@@ -48,19 +40,15 @@ public class Variant {
      * @param bp the base pair number
      * @param ref The reference allele
      * @param alt The alternative allele
-     * @param genotyped boolean indicating whether the variant was genotyped
-     * @param info The info score
      * @param maf The estimated maf in this cohort
      */
-    public Variant(String id, String chr, int bp, String ref, String alt, boolean genotyped, double info, double maf) {
+    public Variant(String id, String chr, int bp, String ref, String alt, double maf) {
         
         this.id = id;
         this.chr = chr;
         this.bp = bp;
         this.ref = ref;
         this.alt = alt;
-        this.info = info;
-        this.genotyped = genotyped;
         this.maf = maf;
         
     }

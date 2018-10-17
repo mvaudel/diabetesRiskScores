@@ -10,11 +10,15 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import no.uib.drs.io.Utils;
 import no.uib.drs.io.json.SimpleObjectMapper;
 import no.uib.drs.io.vcf.GenotypeProvider;
+import no.uib.drs.io.vcf.VariantCoordinatesMap;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
+import no.uib.drs.model.biology.Proxy;
 import no.uib.drs.model.score.RiskScore;
 import no.uib.drs.model.biology.Variant;
+import no.uib.drs.model.score.VariantFeatureMap;
 import no.uib.drs.utils.ProgressHandler;
 
 /**
@@ -42,7 +46,7 @@ public class ComputeGrs {
 
     }
 
-    private void writeScores(File scoreDetailsFile, ArrayList<File> vcfFiles, ArrayList<File> variantDetailsFiles, File destinationFile) {
+    private void writeScores(File scoreDetailsFile, File proxiesMapFile, ArrayList<File> vcfFiles, ArrayList<File> variantDetailsFiles, File destinationFile) {
 
         ProgressHandler progressHandler = new ProgressHandler();
 
@@ -53,6 +57,7 @@ public class ComputeGrs {
         progressHandler.start(taskName);
 
         RiskScore riskScore = SimpleObjectMapper.read(scoreDetailsFile, RiskScore.class);
+        VariantFeatureMap variantFeatureMap = new VariantFeatureMap(riskScore);
 
         progressHandler.end(taskName);
 
@@ -65,8 +70,10 @@ public class ComputeGrs {
 
         progressHandler.end(taskName);
 
-        taskName = "1.2 Computing score";
+        String taskName = "1.1 Loading proxies";
         progressHandler.start(taskName);
+
+        HashMap<String, String> proxyIds = Proxy.getProxyMap(proxiesMapFile);
 
         progressHandler.end(taskName);
 
@@ -74,27 +81,16 @@ public class ComputeGrs {
         progressHandler.start(taskName);;
 
         int nVcf = vcfFiles.size();
-        HashMap<String, VariantDetailsProvider> variantDetailsProviders = new HashMap<>(nVcf);
+        HashMap<String, VariantDetailsProvider> variantCoordinatesMap = new HashMap<>(nVcf);
         IntStream.range(0, nVcf)
                 .parallel()
-                .forEach(i -> variantDetailsProviders.put(
-                vcfFiles.get(i).getName(),
-                VariantDetailsProvider.getVariantDetailsProvider(variantDetailsFiles.get(i), allRS)));
+                .forEach(i -> variantCoordinatesMap.put(vcfFiles.get(i).getName(),
+                VariantCoordinatesMap.getVariantCoordinatesMap(variantDetailsFiles.get(i), variantFeatureMap, proxyIds)));
 
         GenotypeProvider genotypeProvider = new GenotypeProvider();
-        vcfFilesPath.forEach(filePath -> genotypeProvider.addVcfFile(new File(filePath), new File(filePath + ".tbi")));
-
-        Cohort[] cohorts = Cohort.values();
-
-        HashMap<String, VariantDetailsProvider> variantDetailsProviders = Arrays.stream(cohorts)
-                .parallel()
-                .collect(Collectors.toMap(
-                        cohort -> cohort.name(),
-                        cohort -> VariantDetailsProvider.getVariantDetailsProvider(new File(cohort.snpTable), true),
-                        (a, b) -> {
-                            throw new IllegalArgumentException("Duplicate cohort name");
-                        },
-                        HashMap::new));
+        vcfFilesPath.forEach(filePath -> genotypeProvider.addVcfFile(new File(filePath), Utils.getVcfIndexFile(filePath));
+        
+        
 
         progressHandler.end(taskName);
 
@@ -128,7 +124,7 @@ public class ComputeGrs {
 
             for (Cohort cohort : cohorts) {
 
-                VariantDetailsProvider variantDetailsProvider = variantDetailsProviders.get(cohort.name());
+                VariantCoordinatesMap variantDetailsProvider = variantDetailsProviders.get(cohort.name());
                 Variant variant = variantDetailsProvider.getVariant(proxy.proxyId);
 
                 if (variant == null || !variant.genotyped && variant.info < 0.7) {
@@ -199,7 +195,7 @@ public class ComputeGrs {
         for (Cohort cohort : cohorts) {
 
             GenotypeProvider genotypeProvider = genotypeProviders.get(cohort.name());
-            VariantDetailsProvider variantDetailsProvider = variantDetailsProviders.get(cohort.name());
+            VariantCoordinatesMap variantDetailsProvider = variantDetailsProviders.get(cohort.name());
 
             taskName = "1." + progress++ + " Estimating scores in " + cohort.name();
             progressHandler.start(taskName);
