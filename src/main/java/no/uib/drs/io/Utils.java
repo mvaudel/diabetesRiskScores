@@ -13,9 +13,13 @@ import no.uib.drs.io.flat.readers.SimpleTextReader;
 public class Utils {
 
     /**
-     * Encoding, cf the second rule.
+     * Default encoding, cf the second rule.
      */
     public static final String encoding = "UTF-8";
+    /**
+     * Default separator
+     */
+    public static final String separator = "\t";
     
     /**
      * Returns the index file for the given vcf file.

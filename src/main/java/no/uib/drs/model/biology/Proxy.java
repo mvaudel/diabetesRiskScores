@@ -4,8 +4,11 @@ import java.io.File;
 import static java.io.File.separator;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.stream.Collectors;
+import no.uib.drs.io.Utils;
 import static no.uib.drs.io.Utils.getFileReader;
 import no.uib.drs.io.flat.SimpleFileReader;
+import no.uib.drs.io.vcf.VariantDetailsProvider;
 
 /**
  * This class contains information on the proxy of a variant.
@@ -85,6 +88,13 @@ public class Proxy {
 
     }
 
+    /**
+     * Parses the proxy file into a map of ids. Two columns expected: id proxy. Separator is set in the io.Utils class.
+     * 
+     * @param proxyFile the file to parse
+     * 
+     * @return variant id to proxy id in a map
+     */
     public static HashMap<String, String> getProxyMap(File proxyFile) {
 
         HashMap<String, String> result = new HashMap<>();
@@ -128,6 +138,65 @@ public class Proxy {
 
     }
     
-    public static HashMap<String, Proxy> getProxyMap(HashMap<Srting, String> idsMap, )
+    /**
+     * Converts the id mapping into proxy mapping after allele alignment based on the maf.
+     * 
+     * @param idsMap variant to proxy id map
+     * @param variantDetailsProvider the variant details mapping
+     * 
+     * @return variant to proxy map.
+     */
+    public static HashMap<String, Proxy> getProxyMap(HashMap<String, String> idsMap, VariantDetailsProvider variantDetailsProvider) {
+        
+        return idsMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey(), 
+                        entry -> getProxy(entry.getKey(), entry.getValue(), variantDetailsProvider), 
+                        (a, b) -> a, 
+                        HashMap::new));
+        
+    }
+    
+    /**
+     * Returns the proxy object after alleles alignment.
+     * 
+     * @param originalId the original variant id
+     * @param proxyId the proxy variant id
+     * @param variantDetailsProvider a variant details provider
+     * 
+     * @return the proxy object
+     */
+    private static Proxy getProxy(String originalId, String proxyId, VariantDetailsProvider variantDetailsProvider) {
+        
+        Variant variant = variantDetailsProvider.getVariant(originalId);
+        Variant proxy = variantDetailsProvider.getVariant(proxyId);
+        
+        String[] alignedAlleles = alignAlleles(variant, proxy);
+        
+        return new Proxy(
+                                originalId, 
+                                proxyId, 
+                                variant.ref, 
+                                variant.alt, 
+                                alignedAlleles[0], 
+                                alignedAlleles[1]);
+        
+    }
+    
+    /**
+     * Aligns proxy alleles on variant alleles so that the maf is consistently smaller or higher than 0.5.
+     * 
+     * @param variant the original variant
+     * @param proxy the proxy variant
+     * 
+     * @return the ref and alt alleles to use for the proxy in an array.
+     */
+    public static String[] alignAlleles(Variant variant, Variant proxy) {
+        
+        return Math.signum(variant.maf - 0.5) * Math.signum(proxy.maf - 0.5) < 0 
+                ? new String[]{proxy.ref, proxy.alt}
+                : new String[]{proxy.alt, proxy.ref};
+        
+    }
 
 }

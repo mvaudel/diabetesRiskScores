@@ -1,17 +1,14 @@
 package no.uib.drs.io.vcf;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static no.uib.drs.io.Utils.getFileReader;
 import no.uib.drs.io.flat.SimpleFileReader;
 import no.uib.drs.model.biology.Variant;
 import no.uib.drs.model.score.VariantFeatureMap;
+import no.uib.drs.utils.SimpleSemaphore;
 
 /**
  * This class returns information on the variant based on the snp tables of the
@@ -22,38 +19,48 @@ import no.uib.drs.model.score.VariantFeatureMap;
 public class VariantDetailsProvider {
 
     /**
+     * Column separator.
+     */
+    public static final char separator = '\t';
+
+    /**
      * Map of the variant details.
      */
-    private HashMap<String, Variant> variantDetailsMap = new HashMap<>();
+    private final HashMap<String, Variant> variantDetailsMap = new HashMap<>();
+    /**
+     * Map of the variant to vcf file name.
+     */
+    private final HashMap<String, String> variantFileMap = new HashMap<>();
+    /**
+     * Mutex for the edition of the maps.
+     */
+    private final SimpleSemaphore mutex = new SimpleSemaphore(1);
 
     /**
      * Constructor.
      *
      * @param variantDetailsMap the variants details map
      */
-    private VariantDetailsProvider(HashMap<String, Variant> variantDetailsMap) {
-        this.variantDetailsMap = variantDetailsMap;
+    private VariantDetailsProvider() {
+
     }
 
     /**
-     * Parses the variant details from the given table.
+     * Parses the variant details from the given table and stores them in the internal maps.
      *
      * @param snpTable the snp table as exported from the genotyping pipeline
+     * @param vcfName the name of the vcf file
      * @param variantFeatureMap variant to features map
      * @param proxyIds map of id to proxy
-     *
-     * @return a VariantDetailsProvider
      */
-    public static VariantDetailsProvider getVariantDetailsProvider(File snpTable, VariantFeatureMap variantFeatureMap, HashMap<String, String> proxyIds) {
-        
+    public synchronized void addVariants(File snpTable, String vcfName, VariantFeatureMap variantFeatureMap, HashMap<String, String> proxyIds) {
+
         HashMap<String, Boolean> snpFound = Stream.concat(variantFeatureMap.variantIds.stream(), proxyIds.values().stream())
                 .collect(Collectors.toMap(
-                        id -> id, 
-                        id -> false, 
-                        (a, b) -> a, 
+                        id -> id,
+                        id -> false,
+                        (a, b) -> a,
                         HashMap::new));
-
-        HashMap<String, Variant> variantDetailsMap = new HashMap<>();
 
         try (SimpleFileReader reader = getFileReader(snpTable)) {
 
@@ -75,7 +82,7 @@ public class VariantDetailsProvider {
                 OUTER:
                 for (int i = 0; i < lineChars.length; i++) {
 
-                    if (lineChars[i] == '\t') {
+                    if (lineChars[i] == separator) {
 
                         nSeparators++;
 
@@ -91,11 +98,11 @@ public class VariantDetailsProvider {
 
                             case 3:
                                 id = new String(lineChars, lastSeparator + 1, i - lastSeparator - 1);
-                                
+
                                 if (!snpFound.containsKey(id)) {
                                     break OUTER;
                                 }
-                                
+
                                 break;
 
                             case 4:
@@ -120,19 +127,21 @@ public class VariantDetailsProvider {
                     maf = Double.parseDouble(new String(lineChars, lastSeparator + 1, lineChars.length - lastSeparator - 1));
 
                     Variant variant = new Variant(id, chr, bp, ref, alt, maf);
-                    variantDetailsMap.put(id, variant);
-                    snpFound.put(id, true);
                     
+                    mutex.acquire();
+                    variantDetailsMap.put(id, variant);
+                    variantFileMap.put(id, vcfName);
+                    mutex.release();
+                    
+                    snpFound.put(id, true);
+
                     if (snpFound.values().stream().allMatch(a -> a)) {
-                        
+
                         break;
-                        
+
                     }
                 }
             }
-
-            return new VariantDetailsProvider(variantDetailsMap);
-
         }
     }
 
@@ -145,6 +154,17 @@ public class VariantDetailsProvider {
      */
     public Variant getVariant(String id) {
         return variantDetailsMap.get(id);
+    }
+    
+    /**
+     * Returns the name of the vcf file where the given variant can be found.
+     * 
+     * @param id the id of the variant
+     * 
+     * @return the name of the vcf file where the given variant can be found
+     */
+    public String getVcfName(String id) {
+        return variantFileMap.get(id);
     }
 
 }
