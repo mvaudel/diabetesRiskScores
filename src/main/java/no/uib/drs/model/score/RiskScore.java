@@ -1,13 +1,5 @@
 package no.uib.drs.model.score;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.stream.Collectors;
-import no.uib.drs.io.json.SimpleObjectMapper;
 import no.uib.drs.model.ScoringFeature;
 
 /**

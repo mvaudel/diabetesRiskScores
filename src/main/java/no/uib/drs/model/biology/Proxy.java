@@ -193,7 +193,7 @@ public class Proxy {
      */
     public static String[] alignAlleles(Variant variant, Variant proxy) {
         
-        return Math.signum(variant.maf - 0.5) * Math.signum(proxy.maf - 0.5) < 0 
+        return Math.signum(variant.maf - 0.5) * Math.signum(proxy.maf - 0.5) <= 0 
                 ? new String[]{proxy.ref, proxy.alt}
                 : new String[]{proxy.alt, proxy.ref};
         

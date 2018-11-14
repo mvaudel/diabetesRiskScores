@@ -4,13 +4,16 @@ import htsjdk.variant.vcf.VCFFileReader;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.stream.IntStream;
 import no.uib.drs.io.Utils;
+import no.uib.drs.io.flat.SimpleGzWriter;
 import no.uib.drs.io.json.SimpleObjectMapper;
 import no.uib.drs.io.vcf.GenotypeProvider;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
 import no.uib.drs.model.biology.Proxy;
 import no.uib.drs.model.score.RiskScore;
 import no.uib.drs.model.score.VariantFeatureMap;
+import no.uib.drs.processing.ScoreComputer;
 import no.uib.drs.utils.ProgressHandler;
 
 /**
@@ -52,36 +55,25 @@ public class ComputeScore {
         VariantFeatureMap variantFeatureMap = new VariantFeatureMap(riskScore);
 
         progressHandler.end(taskName);
-        
 
-        taskName = "1.2 Loading samples details";
-        progressHandler.start(taskName);
-
-        VCFFileReader vcfFileReader = new VCFFileReader(vcfFiles.get(0));
-        ArrayList<String> sampleNames = vcfFileReader.getFileHeader().getSampleNamesInOrder();
-        vcfFileReader.close();
-
-        progressHandler.end(taskName);
-        
-
-        taskName = "1.1 Loading proxies";
+        taskName = "1.2 Loading proxies";
         progressHandler.start(taskName);
 
         HashMap<String, String> proxyIds = Proxy.getProxyMap(proxiesMapFile);
 
         progressHandler.end(taskName);
-        
 
-        taskName = "1.1 Loading variant details";
+        taskName = "1.3 Loading variant details";
         progressHandler.start(taskName);
 
         VariantDetailsProvider variantDetailsProvider = new VariantDetailsProvider(variantFeatureMap, proxyIds);
         vcfFiles.stream()
                 .parallel()
                 .forEach(vcfFile -> variantDetailsProvider.addVariants(vcfFile, vcfFile.getName()));
+        
+        HashMap<String, Proxy> proxiesMap = Proxy.getProxyMap(proxyIds, variantDetailsProvider);
 
         progressHandler.end(taskName);
-        
 
         taskName = "1.4 Setting up vcf file readers";
         progressHandler.start(taskName);
@@ -91,15 +83,43 @@ public class ComputeScore {
 
         progressHandler.end(taskName);
 
-        taskName = "1.5 Closing connection to files";
+        taskName = "1.5 compute score";
         progressHandler.start(taskName);
 
-        genotypeProviders.values()
-                .forEach(genotypeProvider -> genotypeProvider.close());
+        ScoreComputer scoreComputer = new ScoreComputer(vcfFiles, variantDetailsProvider);
+        double[] scores = scoreComputer.computeRiskScores(riskScore, proxiesMap);
+        ArrayList<String> sampleNames = scoreComputer.getSampleNames();
+
+        progressHandler.end(taskName);
+
+        taskName = "1.6 Exporting results";
+        progressHandler.start(taskName);
+
+        exportResults(destinationFile, sampleNames, scores);
 
         progressHandler.end(taskName);
 
         progressHandler.end(mainTaskName);
+
+    }
+
+    /**
+     * Exports the score results to the file.
+     * 
+     * @param destinationFile the destination file
+     * @param sampleNames the name of the samples
+     * @param scores the scores array
+     */
+    private void exportResults(File destinationFile, ArrayList<String> sampleNames, double[] scores) {
+
+        try (SimpleGzWriter writer = new SimpleGzWriter(destinationFile)) {
+
+            writer.writeLine("Sample", "Score");
+
+            IntStream.range(0, sampleNames.size())
+                    .forEach(i -> writer.writeLine(sampleNames.get(i), Double.toString(scores[i])));
+
+        }
 
     }
 }

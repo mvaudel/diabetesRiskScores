@@ -45,40 +45,12 @@ public class SingleAlleleFeature implements ScoringFeature {
     }
 
     @Override
-    public double getScoreContribution(String sample, HashMap<String, HashMap<String, String[]>> genotypeMap, HashMap<String, Proxy> proxiesMap) {
+    public double getScoreContribution(String[] alleles) {
 
-        int nAlleles = getGenotype(sample, genotypeMap, proxiesMap);
+        return weight * Arrays.stream(alleles)
+                .filter(sampleAllele -> sampleAllele.equals(allele))
+                .count();
 
-        return nAlleles * weight;
-
-    }
-
-    @Override
-    public int getGenotype(String sample, HashMap<String, HashMap<String, String[]>> genotypeMap, HashMap<String, Proxy> proxiesMap) {
-
-        Proxy proxy = proxiesMap.get(rsId);
-
-        if (proxy != null) {
-
-            HashMap<String, String[]> snpMap = genotypeMap.get(proxy.proxyId);
-
-            if (snpMap != null) {
-
-                String[] alleles = snpMap.get(sample);
-
-                if (alleles != null) {
-
-                    String proxyAllele = proxy.getProxyAllele(allele);
-
-                    return (int) Arrays.stream(alleles)
-                            .filter(sampleAllele -> sampleAllele.equals(proxyAllele))
-                            .count();
-
-                }
-            }
-        }
-
-        return 0;
     }
 
     @Override
