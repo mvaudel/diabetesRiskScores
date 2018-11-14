@@ -44,11 +44,11 @@ public class ScoreComputer {
      * @param vcfFiles the vcf files
      * @param variantDetailsProvider the variants details provider
      */
-    public ScoreComputer(ArrayList<File> vcfFiles, VariantDetailsProvider variantDetailsProvider) {
+    public ScoreComputer(File[] vcfFiles, VariantDetailsProvider variantDetailsProvider) {
 
         this.variantDetailsProvider = variantDetailsProvider;
 
-        vcfFileReaders = vcfFiles.stream()
+        vcfFileReaders = Arrays.stream(vcfFiles)
                 .collect(Collectors.toMap(
                         file -> file.getName(),
                         file -> new VCFFileReader(file),

@@ -1,11 +1,14 @@
 package no.uib.drs.cmd;
 
-import htsjdk.variant.vcf.VCFFileReader;
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.stream.IntStream;
-import no.uib.drs.io.Utils;
+import no.uib.drs.DiabetesRiskScore;
+import static no.uib.drs.io.Utils.getVcfIndexFile;
+import static no.uib.drs.io.Utils.lineSeparator;
 import no.uib.drs.io.flat.SimpleGzWriter;
 import no.uib.drs.io.json.SimpleObjectMapper;
 import no.uib.drs.io.vcf.GenotypeProvider;
@@ -15,6 +18,10 @@ import no.uib.drs.model.score.RiskScore;
 import no.uib.drs.model.score.VariantFeatureMap;
 import no.uib.drs.processing.ScoreComputer;
 import no.uib.drs.utils.ProgressHandler;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
 
 /**
  * This class writes the summary for a given score on a set of vcf files.
@@ -30,9 +37,37 @@ public class ComputeScore {
      */
     public static void main(String[] args) {
 
+        if (args.length == 0
+                || args.length == 1 && args[0].equals("-h")
+                || args.length == 1 && args[0].equals("--help")) {
+
+            printHelp();
+            return;
+
+        }
+
+        if (args.length == 1 && args[0].equals("-v")
+                || args.length == 1 && args[0].equals("--version")) {
+
+            System.out.println(DiabetesRiskScore.getVersion());
+
+            return;
+
+        }
+
         try {
+            
+            Options lOptions = new Options();
+            ComputeScoreOptions.createOptionsCLI(lOptions);
+            CommandLineParser parser = new DefaultParser();
+            CommandLine commandLine = parser.parse(lOptions, args);
+            
+            ComputeScoreOptionsBean bean = new ComputeScoreOptionsBean(commandLine);
+            
+            writeScores(bean.scoreDetailsFile, bean.proxiesMapFile, bean.vcfFiles, bean.variantDetailsFiles, bean.destinationFile);
 
         } catch (Throwable e) {
+
             e.printStackTrace();
         }
     }
@@ -41,7 +76,31 @@ public class ComputeScore {
 
     }
 
-    private void writeScores(File scoreDetailsFile, File proxiesMapFile, ArrayList<File> vcfFiles, ArrayList<File> variantDetailsFiles, File destinationFile) {
+    private static void printHelp() {
+
+        PrintWriter lPrintWriter = new PrintWriter(System.out);
+        lPrintWriter.print(lineSeparator);
+        lPrintWriter.print("=================================" + lineSeparator);
+        lPrintWriter.print("DiabetesRiskScores - Command Line" + lineSeparator);
+        lPrintWriter.print("=================================" + lineSeparator);
+        lPrintWriter.print(lineSeparator
+                + "The DiabetesRiskScores command line computes risk scores from vcf files." + lineSeparator
+                + lineSeparator
+                + "For documentation and bug report see https://github.com/mvaudel/diabetesRiskScores." + lineSeparator
+                + lineSeparator
+                + "----------------------"
+                + lineSeparator
+                + "OPTIONS"
+                + lineSeparator
+                + "----------------------" + lineSeparator
+                + lineSeparator);
+        lPrintWriter.print(ComputeScoreOptions.getOptionsAsString());
+        lPrintWriter.flush();
+        lPrintWriter.close();
+
+    }
+
+    private static void writeScores(File scoreDetailsFile, File proxiesMapFile, File[] vcfFiles, File[] variantDetailsFiles, File destinationFile) {
 
         ProgressHandler progressHandler = new ProgressHandler();
 
@@ -67,10 +126,10 @@ public class ComputeScore {
         progressHandler.start(taskName);
 
         VariantDetailsProvider variantDetailsProvider = new VariantDetailsProvider(variantFeatureMap, proxyIds);
-        vcfFiles.stream()
+        Arrays.stream(vcfFiles)
                 .parallel()
                 .forEach(vcfFile -> variantDetailsProvider.addVariants(vcfFile, vcfFile.getName()));
-        
+
         HashMap<String, Proxy> proxiesMap = Proxy.getProxyMap(proxyIds, variantDetailsProvider);
 
         progressHandler.end(taskName);
@@ -79,7 +138,7 @@ public class ComputeScore {
         progressHandler.start(taskName);
 
         GenotypeProvider genotypeProvider = new GenotypeProvider();
-        vcfFiles.forEach(file -> genotypeProvider.addVcfFile(file, Utils.getVcfIndexFile(file)));
+        Arrays.stream(vcfFiles).forEach(file -> genotypeProvider.addVcfFile(file, getVcfIndexFile(file)));
 
         progressHandler.end(taskName);
 
@@ -105,12 +164,12 @@ public class ComputeScore {
 
     /**
      * Exports the score results to the file.
-     * 
+     *
      * @param destinationFile the destination file
      * @param sampleNames the name of the samples
      * @param scores the scores array
      */
-    private void exportResults(File destinationFile, ArrayList<String> sampleNames, double[] scores) {
+    private static void exportResults(File destinationFile, ArrayList<String> sampleNames, double[] scores) {
 
         try (SimpleGzWriter writer = new SimpleGzWriter(destinationFile)) {
 
@@ -120,6 +179,5 @@ public class ComputeScore {
                     .forEach(i -> writer.writeLine(sampleNames.get(i), Double.toString(scores[i])));
 
         }
-
     }
 }

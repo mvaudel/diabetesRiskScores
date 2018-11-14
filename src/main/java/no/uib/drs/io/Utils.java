@@ -20,6 +20,10 @@ public class Utils {
      * Default separator
      */
     public static final String separator = "\t";
+    /**
+     * The line separator.
+     */
+    public static final String lineSeparator = System.getProperty("line.separator");
     
     /**
      * Returns the index file for the given vcf file.
