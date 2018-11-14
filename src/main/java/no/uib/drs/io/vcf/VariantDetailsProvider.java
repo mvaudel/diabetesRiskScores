@@ -3,7 +3,6 @@ package no.uib.drs.io.vcf;
 import java.io.File;
 import java.util.HashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import static no.uib.drs.io.Utils.getFileReader;
 import no.uib.drs.io.flat.SimpleFileReader;
 import no.uib.drs.model.biology.Variant;
@@ -22,7 +21,6 @@ public class VariantDetailsProvider {
      * Column separator.
      */
     public static final char separator = '\t';
-
     /**
      * Map of the variant details.
      */
@@ -35,13 +33,30 @@ public class VariantDetailsProvider {
      * Mutex for the edition of the maps.
      */
     private final SimpleSemaphore mutex = new SimpleSemaphore(1);
+    /**
+     * Map of the markers found.
+     */
+    private final HashMap<String, Boolean> snpFound;
+    /**
+     * Boolean indicating whether all markers were found.
+     */
+    private boolean allFound = false;
 
     /**
      * Constructor.
-     *
-     * @param variantDetailsMap the variants details map
+     * 
+     * @param variantFeatureMap variant to features map
+     * @param proxyIds map of id to proxy
      */
-    private VariantDetailsProvider() {
+    public VariantDetailsProvider(VariantFeatureMap variantFeatureMap, HashMap<String, String> proxyIds) {
+
+        snpFound = variantFeatureMap.variantIds.stream()
+                .map(id -> proxyIds.containsKey(id) ? proxyIds.get(id) : id)
+                .collect(Collectors.toMap(
+                        id -> id,
+                        id -> false,
+                        (a, b) -> a,
+                        HashMap::new));
 
     }
 
@@ -50,22 +65,13 @@ public class VariantDetailsProvider {
      *
      * @param snpTable the snp table as exported from the genotyping pipeline
      * @param vcfName the name of the vcf file
-     * @param variantFeatureMap variant to features map
-     * @param proxyIds map of id to proxy
      */
-    public synchronized void addVariants(File snpTable, String vcfName, VariantFeatureMap variantFeatureMap, HashMap<String, String> proxyIds) {
-
-        HashMap<String, Boolean> snpFound = Stream.concat(variantFeatureMap.variantIds.stream(), proxyIds.values().stream())
-                .collect(Collectors.toMap(
-                        id -> id,
-                        id -> false,
-                        (a, b) -> a,
-                        HashMap::new));
+    public void addVariants(File snpTable, String vcfName) {
 
         try (SimpleFileReader reader = getFileReader(snpTable)) {
 
             String line = reader.readLine();
-            while ((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null && !allFound) {
 
                 char[] lineChars = line.toCharArray();
 
@@ -77,7 +83,7 @@ public class VariantDetailsProvider {
                 int bp = -1;
                 String ref = null;
                 String alt = null;
-                double maf = Double.NaN;
+                double maf;
 
                 OUTER:
                 for (int i = 0; i < lineChars.length; i++) {
@@ -129,17 +135,17 @@ public class VariantDetailsProvider {
                     Variant variant = new Variant(id, chr, bp, ref, alt, maf);
                     
                     mutex.acquire();
+                    
                     variantDetailsMap.put(id, variant);
                     variantFileMap.put(id, vcfName);
-                    mutex.release();
                     
                     snpFound.put(id, true);
 
-                    if (snpFound.values().stream().allMatch(a -> a)) {
-
-                        break;
-
-                    }
+                    allFound = snpFound.values().stream()
+                            .allMatch(a -> a);
+                    
+                    mutex.release();
+                    
                 }
             }
         }

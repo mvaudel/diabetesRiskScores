@@ -6,8 +6,6 @@ package no.uib.drs.model;
  * @author Marc Vaudel
  */
 public interface ScoringFeature {
-
-    public double getScoreContribution(String allele);
     
     public double getScoreContribution(String[] alleles);
     /**

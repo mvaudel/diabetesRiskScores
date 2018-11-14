@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import no.uib.drs.model.ScoringFeature;
-import no.uib.drs.model.biology.Proxy;
 
 /**
  * This class keeps track of which features needs which variants and vice-versa.

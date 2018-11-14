@@ -1,7 +1,5 @@
 package no.uib.drs.processing;
 
-import no.uib.drs.processing.caches.VariantCache;
-import no.uib.drs.processing.caches.ScoreProgress;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
@@ -10,17 +8,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import no.uib.drs.io.Utils;
-import static no.uib.drs.io.Utils.getVcfIndexFile;
+import no.uib.drs.io.vcf.VariantDetailsProvider;
 import no.uib.drs.model.ScoringFeature;
 import no.uib.drs.model.score.RiskScore;
 import no.uib.drs.model.biology.Proxy;
-import no.uib.drs.model.score.VariantFeatureMap;
-import no.uib.drs.processing.caches.ProxyCoordinates;
+import no.uib.drs.model.biology.Variant;
+import no.uib.drs.utils.SimpleSemaphore;
 
 /**
  * Computes risk scores.
@@ -29,124 +25,163 @@ import no.uib.drs.processing.caches.ProxyCoordinates;
  */
 public class ScoreComputer {
 
-    public static double[] computeRiskScores(RiskScore riskScore, ArrayList<File> vcfFiles, ArrayList<String> sampleNames, HashMap<String, Proxy[]> proxiesMap) {
+    /**
+     * The ordered sample names as found in a vcf file.
+     */
+    private final ArrayList<String> sampleNames;
+    /**
+     * The vcf readers linked to the vcf files.
+     */
+    private final HashMap<String, VCFFileReader> vcfFileReaders;
+    /**
+     * The variant details provider for the markers in the vcf files.
+     */
+    private final VariantDetailsProvider variantDetailsProvider;
 
-        // Intermediate scores map
-        final HashMap<String, HashMap<String, Double>> intermediateScoresMap = new HashMap<>(vcfFiles.size());
-        vcfFiles.forEach(file -> intermediateScoresMap.put(file.getName(), new HashMap<>(sampleNames.size())));
+    /**
+     * Constructor
+     *
+     * @param vcfFiles the vcf files
+     * @param variantDetailsProvider the variants details provider
+     */
+    public ScoreComputer(ArrayList<File> vcfFiles, VariantDetailsProvider variantDetailsProvider) {
 
-        // Variant to feature mapping
-        VariantFeatureMap variantFeatureMap = new VariantFeatureMap(riskScore);
+        this.variantDetailsProvider = variantDetailsProvider;
 
-        // Various caches
-        VariantCache variantCache = new VariantCache();
-        ScoreProgress scoreProgress = new ScoreProgress();
+        vcfFileReaders = vcfFiles.stream()
+                .collect(Collectors.toMap(
+                        file -> file.getName(),
+                        file -> new VCFFileReader(file),
+                        (a, b) -> a,
+                        HashMap::new));
 
-        // Iterate vcf files
-        vcfFiles.parallelStream()
-                .forEach(vcfFile -> {
+        sampleNames = vcfFileReaders.values().stream().findAny().get().getFileHeader().getSampleNamesInOrder();
 
-                    String fileName = vcfFile.getName();
+    }
 
-                    try (VCFFileReader vcfFileReader = new VCFFileReader(vcfFile)) {
+    /**
+     * Computes the risk score for all patients in the given vcf files.
+     *
+     * @param riskScore the risk score
+     * @param proxiesMap the map of proxies
+     *
+     * @return the risk score for each patient
+     */
+    public double[] computeRiskScores(RiskScore riskScore, HashMap<String, Proxy> proxiesMap) {
 
-                        // Set up scores
-                        HashMap<String, Double> intermediateScores = intermediateScoresMap.get(fileName);
-                        ArrayList<String> vcfSamples = vcfFileReader.getFileHeader().getSampleNamesInOrder();
-                        HashMap<String, Integer> sampleIndexes = sampleNames.stream()
-                                .collect(Collectors.toMap(
-                                        id -> id,
-                                        id -> vcfSamples.indexOf(id),
-                                        (a, b) -> a,
-                                        HashMap::new));
-                        sampleNames.forEach(sampleId -> {
-                            intermediateScores.put(sampleId, 0.0);
-                            if (!sampleIndexes.containsKey(sampleId)) {
-                                throw new IllegalArgumentException(sampleId + " not found in " + fileName + ".");
-                            }
-                        });
+        final double[] scores = new double[sampleNames.size()];
 
-                        // Set up cache for proxies
-                        ProxyCoordinates proxyCoordinates = new ProxyCoordinates(proxiesMap);
+        final SimpleSemaphore scoreMutex = new SimpleSemaphore(1);
 
-                        // Iterate variants
-                        try (CloseableIterator<VariantContext> iterator = vcfFileReader.iterator()) {
+        Arrays.stream(riskScore.features)
+                .parallel()
+                .forEach(feature -> {
+
+                    final String[] variantProxies = Arrays.stream(feature.getVariants())
+                            .map(id -> proxiesMap.containsKey(id) ? proxiesMap.get(id).proxyId : id)
+                            .toArray(String[]::new);
+
+                    final List<Allele>[] alleles = new List[variantProxies.length];
+
+                    for (int i = 0; i < variantProxies.length; i++) {
+
+                        String id = variantProxies[i];
+                        String vcfFileName = variantDetailsProvider.getVcfName(id);
+                        Variant variant = variantDetailsProvider.getVariant(id);
+
+                        VCFFileReader vcfFileReader = vcfFileReaders.get(vcfFileName);
+                        boolean found = false;
+
+                        try (CloseableIterator<VariantContext> iterator = vcfFileReader.query(variant.chr, variant.bp, variant.bp)) {
 
                             while (iterator.hasNext()) {
 
-                                // Get variant
                                 VariantContext variantContext = iterator.next();
                                 String variantId = variantContext.getID();
 
-                                // Check whether it is used in the score 
-                                if (variantFeatureMap.variantIds.contains(variantId)) {
+                                if (variantId.equals(id)) {
 
-                                    List<Allele> alleles = variantContext.getAlleles();
+                                    alleles[i] = variantContext.getAlleles();
 
-                                    // Iterate the features where this variant can be used
-                                    for (String featureId : variantFeatureMap.variantToFeatureMap.get(variantId)) {
-
-                                        ScoringFeature scoringFeature = variantFeatureMap.featureMap.get(featureId);
-
-                                        String[] variantsNeeded = scoringFeature.getVariants();
-
-                                        if (variantsNeeded.length == 1) {
-
-                                            // Single variant scoring
-                                            sampleNames.parallelStream()
-                                                    .forEach(sampleId -> {
-                                                        int i = sampleIndexes.get(sampleId);
-                                                        Allele allele = alleles.get(i);
-
-                                                        double scoreContribution = scoringFeature.
-                                                    });
-
-                                        } else {
-
-                                            // Multiple variant scoring
-                                        }
-
-                                    }
-
-                                }
-
-                                // Check if it can be a proxy
-                                Proxy proxy = proxyCoordinates.proxyIdToProxy.get(variantId);
-
-                                if (proxy != null) {
-
-                                    String originalVariant = proxy.snpId;
-
-                                    // Keep coordinates for single variant features
-                                    if (Arrays.stream(variantFeatureMap.variantToFeatureMap.get(variantId))
-                                            .anyMatch(featureId -> variantFeatureMap.featureMap.get(featureId).getVariants().length == 1)) {
-
-                                        proxyCoordinates.chrMap.put(variantId, variantContext.getContig());
-                                        proxyCoordinates.bpMap.put(fileName, variantContext.getStart());
-
-                                    }
-
-                                    // Store genotype in cache for multiple variant features
-                                    if (Arrays.stream(variantFeatureMap.variantToFeatureMap.get(variantId))
-                                            .anyMatch(featureId -> variantFeatureMap.featureMap.get(featureId).getVariants().length > 1)) {
-
-                                        List<Allele> alleles = variantContext.getAlleles();
-                                        String[] sampleAlleles = sampleNames.stream()
-                                                .map(sample -> alleles.get(sampleIndexes.get(sample)).getBaseString())
-                                                .toArray(String[]::new);
-                                        
-                                        variantCache.acquire();
-                                        variantCache.addAlleles(variantId, sampleAlleles);
-                                        variantCache.release();
-
-                                    }
                                 }
                             }
                         }
+
+                        if (!found) {
+
+                            throw new IllegalArgumentException("Variant " + id + " not found in vcf file " + vcfFileName + ".");
+
+                        }
                     }
+
+                    scoreMutex.acquire();
+
+                    IntStream.range(0, sampleNames.size())
+                            .parallel()
+                            .forEach(i -> {
+                                scores[i] = scores[i] + feature.getScoreContribution(getAlleles(feature, alleles, proxiesMap, i));
+                            });
+
+                    scoreMutex.release();
+
                 });
 
-        return new double[1];
+        return scores;
+
+    }
+
+    /**
+     * Returns the allele of the original snp for a given sample.
+     *
+     * @param feature the scoring feature
+     * @param alleles the alleles found for all samples
+     * @param proxiesMap the map of proxies
+     * @param i the index of the patient
+     *
+     * @return the allele of the original snp for a given sample
+     */
+    private String[] getAlleles(ScoringFeature feature, List<Allele>[] alleles, HashMap<String, Proxy> proxiesMap, int i) {
+
+        String[] variants = feature.getVariants();
+        String[] sampleAlleles = new String[variants.length];
+
+        for (int j = 0; j < variants.length; j++) {
+
+            String allele = alleles[j].get(i).getBaseString();
+
+            Proxy proxy = proxiesMap.get(variants[j]);
+
+            if (proxy != null) {
+
+                allele = proxy.getProxyAllele(allele);
+
+            }
+
+            sampleAlleles[j] = allele;
+
+        }
+
+        return sampleAlleles;
+
+    }
+
+    /**
+     * Returns the sample names.
+     *
+     * @return the sample names
+     */
+    public ArrayList<String> getSampleNames() {
+
+        return sampleNames;
+
+    }
+
+    /**
+     * Closes the connection to files.
+     */
+    public void close() {
+
+        vcfFileReaders.values().forEach(reader -> reader.close());
 
     }
 

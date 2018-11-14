@@ -3,21 +3,13 @@ package no.uib.drs.cmd;
 import htsjdk.variant.vcf.VCFFileReader;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import no.uib.drs.io.Utils;
 import no.uib.drs.io.json.SimpleObjectMapper;
 import no.uib.drs.io.vcf.GenotypeProvider;
-import no.uib.drs.io.vcf.VariantCoordinatesMap;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
 import no.uib.drs.model.biology.Proxy;
 import no.uib.drs.model.score.RiskScore;
-import no.uib.drs.model.biology.Variant;
 import no.uib.drs.model.score.VariantFeatureMap;
 import no.uib.drs.utils.ProgressHandler;
 
@@ -72,7 +64,7 @@ public class ComputeScore {
         progressHandler.end(taskName);
         
 
-        String taskName = "1.1 Loading proxies";
+        taskName = "1.1 Loading proxies";
         progressHandler.start(taskName);
 
         HashMap<String, String> proxyIds = Proxy.getProxyMap(proxiesMapFile);
@@ -81,14 +73,12 @@ public class ComputeScore {
         
 
         taskName = "1.1 Loading variant details";
-        progressHandler.start(taskName);;
+        progressHandler.start(taskName);
 
-        VariantDetailsProvider variantDetailsProvider = new VariantDetailsProvider;
+        VariantDetailsProvider variantDetailsProvider = new VariantDetailsProvider(variantFeatureMap, proxyIds);
         vcfFiles.stream()
                 .parallel()
-                .forEach(vcfFile -> variantDetailsProvider.addVariants(vcfFile, vcfFile.getName(), variantFeatureMap, proxyIds));
-        
-        HashMap<String, Proxy> proxyMap = Proxy.getProxyMap(proxyIds, HashMap<String, VariantDetailsProvider> );
+                .forEach(vcfFile -> variantDetailsProvider.addVariants(vcfFile, vcfFile.getName()));
 
         progressHandler.end(taskName);
         
@@ -97,11 +87,11 @@ public class ComputeScore {
         progressHandler.start(taskName);
 
         GenotypeProvider genotypeProvider = new GenotypeProvider();
-        vcfFilesPath.forEach(filePath -> genotypeProvider.addVcfFile(new File(filePath), Utils.getVcfIndexFile(filePath));
+        vcfFiles.forEach(file -> genotypeProvider.addVcfFile(file, Utils.getVcfIndexFile(file)));
 
         progressHandler.end(taskName);
 
-        taskName = "1." + progress++ + " Closing connection to files";
+        taskName = "1.5 Closing connection to files";
         progressHandler.start(taskName);
 
         genotypeProviders.values()
