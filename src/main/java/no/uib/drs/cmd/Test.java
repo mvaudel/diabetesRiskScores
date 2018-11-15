@@ -32,13 +32,8 @@ public class Test {
                     System.out.println("Info " + variantContext.getID());
                     System.out.println(variantContext.getCommonInfo().getAttributes());
                         
-                    Map<String, Object> attribute = variantContext.getGenotype(0).getExtendedAttributes();
-                    System.out.println("Attributes " + variantContext.getID());
-                    System.out.println(attribute);
-                        
-                    attribute = variantContext.getGenotype(10).getExtendedAttributes();
-                    System.out.println("Attributes " + variantContext.getID());
-                    System.out.println(attribute);
+                    System.out.println("Filters " + variantContext.getID());
+                    System.out.println(variantContext.getGenotype(10).getFilters());
                 }
             }
         }
