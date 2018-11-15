@@ -145,7 +145,7 @@ public class InfoFile {
 
             try (SimpleGzWriter writer = new SimpleGzWriter(destinationFile)) {
 
-                writer.writeLine("CHR", "BP", "ID", "REF", "ALT", "MAF");
+                writer.writeLine("CHR", "BP", "ID", "REF", "ALT", "MAF", "TYPED", "SCORE");
 
                 try (CloseableIterator<VariantContext> iterator = vcfFileReader.iterator()) {
 
@@ -161,7 +161,9 @@ public class InfoFile {
                             String ref = variantContext.getReference().getBaseString();
                             
                             boolean typed = vcfSettings.typedFilter && variantContext.getFilters().contains(vcfSettings.typedFlag)
-                                    || !vcfSettings.typedFilter ;
+                                    || !vcfSettings.typedFilter && (boolean) variantContext.getAttribute(vcfSettings.typedFlag);
+                            
+                            double score = (double) variantContext.getAttribute(vcfSettings.scoreFlag);
 
                             List<Allele> altAlleles = variantContext.getAlternateAlleles();
 
@@ -189,7 +191,9 @@ public class InfoFile {
                                             variantId,
                                             ref,
                                             alt,
-                                            Double.toString(maf)
+                                            Double.toString(maf),
+                                            typed ? "1" : "0",
+                                            Double.toString(score)
                                     );
 
                                 }
