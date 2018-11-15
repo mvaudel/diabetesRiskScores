@@ -4,6 +4,7 @@ import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 import java.io.File;
+import java.util.Map;
 
 /**
  *
@@ -27,8 +28,9 @@ public class Test {
                 while (iterator.hasNext()) {
 
                     VariantContext variantContext = iterator.next();
-                    Object attribute = variantContext.getGenotype(0).getExtendedAttributes().get("GP");
-                    if (attribute != null) {
+                    Map<String, Object> attribute = variantContext.getGenotype(0).getExtendedAttributes();
+                    
+                    if (attribute.size() > 2) {
                         
                     System.out.println("Attributes Umich");
                     System.out.println(attribute);
@@ -45,7 +47,7 @@ public class Test {
 
             try (CloseableIterator<VariantContext> iterator = reader.iterator()) {
 
-                while (iterator.hasNext() && cpt++ < 10) {
+                while (iterator.hasNext() && cpt++ < 1) {
 
                     VariantContext variantContext = iterator.next();
 //                    System.out.println("Attributes Sanger");
