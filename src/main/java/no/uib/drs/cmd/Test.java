@@ -18,13 +18,13 @@ public class Test {
      */
     public static void main(String[] args) {
 
-        int cpt = 10;
+        int cpt = 0;
 
         try (VCFFileReader reader = new VCFFileReader(new File("/mnt/archive/mody/gw/vcf/tmp/mody_22.vcf.gz"))) {
 
             try (CloseableIterator<VariantContext> iterator = reader.iterator()) {
 
-                while (iterator.hasNext() && cpt++ < 1) {
+                while (iterator.hasNext() && cpt++ < 10) {
 
                     VariantContext variantContext = iterator.next();
                     System.out.println("Attributes Umich");
@@ -38,13 +38,13 @@ public class Test {
             }
         }
         
-        cpt = 10;
+        cpt = 0;
 
         try (VCFFileReader reader = new VCFFileReader(new File("/mnt/archive/mody/gw/vcf/tmp/22-dbsnp-unique-common.vcf.gz"))) {
 
             try (CloseableIterator<VariantContext> iterator = reader.iterator()) {
 
-                while (iterator.hasNext() && cpt++ < 1) {
+                while (iterator.hasNext() && cpt++ < 10) {
 
                     VariantContext variantContext = iterator.next();
                     System.out.println("Attributes Sanger");
