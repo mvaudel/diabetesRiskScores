@@ -24,15 +24,11 @@ public class Test {
 
             try (CloseableIterator<VariantContext> iterator = reader.iterator()) {
 
-                while (iterator.hasNext() && cpt++ < 10) {
+                while (iterator.hasNext() && cpt++ < 100) {
 
                     VariantContext variantContext = iterator.next();
                     System.out.println("Attributes Umich");
                     System.out.println(variantContext.getCommonInfo().getAttributes());
-                    System.out.println("logp Umich");
-                    System.out.println(variantContext.getCommonInfo().getLog10PError());
-                    System.out.println("filters Umich");
-                    System.out.println(variantContext.getCommonInfo().getFilters());
 
                 }
             }
@@ -47,12 +43,8 @@ public class Test {
                 while (iterator.hasNext() && cpt++ < 10) {
 
                     VariantContext variantContext = iterator.next();
-                    System.out.println("Attributes Sanger");
-                    System.out.println(variantContext.getCommonInfo().getAttributes());
-                    System.out.println("logp Sanger");
-                    System.out.println(variantContext.getCommonInfo().getLog10PError());
-                    System.out.println("filters Sanger");
-                    System.out.println(variantContext.getCommonInfo().getFilters());
+//                    System.out.println("Attributes Sanger");
+//                    System.out.println(variantContext.getCommonInfo().getAttributes());
 
                 }
             }
