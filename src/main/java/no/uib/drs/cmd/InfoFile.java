@@ -13,6 +13,7 @@ import static no.uib.drs.io.Utils.getFileReader;
 import static no.uib.drs.io.Utils.lineSeparator;
 import no.uib.drs.io.flat.SimpleFileReader;
 import no.uib.drs.io.flat.SimpleGzWriter;
+import no.uib.drs.io.vcf.VcfSettings;
 import no.uib.drs.utils.ProgressHandler;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -60,7 +61,7 @@ public class InfoFile {
 
             InfoFileOptionsBean bean = new InfoFileOptionsBean(commandLine);
 
-            writeInfoFile(bean.vcfFile, bean.destinationFile, bean.snpFile);
+            writeInfoFile(bean.vcfFile, bean.destinationFile, bean.snpFile, bean.vcfSettings);
 
         } catch (Throwable e) {
 
@@ -75,8 +76,9 @@ public class InfoFile {
      * @param vcfFile the vcf file
      * @param destinationFile the output file
      * @param snpFile the file containing the ids of the variants to extract
+     * @param vcfSettings the vcf parsing settings
      */
-    private static void writeInfoFile(File vcfFile, File destinationFile, File snpFile) {
+    private static void writeInfoFile(File vcfFile, File destinationFile, File snpFile, VcfSettings vcfSettings) {
 
         ProgressHandler progressHandler = new ProgressHandler();
 
@@ -93,7 +95,7 @@ public class InfoFile {
         taskName = "1.2 Extracting variant details";
         progressHandler.start(taskName);
 
-        extractDetails(vcfFile, destinationFile, variants);
+        extractDetails(vcfFile, destinationFile, variants, vcfSettings);
 
         progressHandler.end(taskName);
 
@@ -135,8 +137,9 @@ public class InfoFile {
      * @param vcfFile the vcf file
      * @param destinationFile the destination file
      * @param variants the ids of variants to select, ignored if null
+     * @param vcfSettings the vcf parsing settings
      */
-    private static void extractDetails(File vcfFile, File destinationFile, HashSet<String> variants) {
+    private static void extractDetails(File vcfFile, File destinationFile, HashSet<String> variants, VcfSettings vcfSettings) {
 
         try (VCFFileReader vcfFileReader = new VCFFileReader(vcfFile)) {
 
@@ -156,9 +159,11 @@ public class InfoFile {
                             String contig = variantContext.getContig();
                             int start = variantContext.getStart();
                             String ref = variantContext.getReference().getBaseString();
+                            
+                            boolean typed = vcfSettings.typedFilter && variantContext.getFilters().contains(vcfSettings.typedFlag)
+                                    || !vcfSettings.typedFilter ;
 
                             List<Allele> altAlleles = variantContext.getAlternateAlleles();
-                            
 
                             if (altAlleles.size() == 1) {
 

@@ -14,7 +14,8 @@ public enum InfoFileOptions {
     vcf("v", "vcf", "The vcf files as comma separated list.", true, true),
     out("o", "out", "File where to write the file.", true, true),
     vatriants("s", "snps", "List of variants to include. All variants are used if not provided.", false, true),
-    typed("t", "typed", "Attribute used to flag genotyped markers in the vcf file (e.g. 'TYPED' for imputation at Sanger, '' for imputation at umich).", true, true),
+    typed("t", "typed", "Attribute used to flag genotyped markers in the vcf file (e.g. 'TYPED' for imputation at Sanger, 'GENOTYPED' for imputation at umich).", true, true),
+    filter("f", "filter", "Whether the typed attribute is in the filter or the info column (0 for info, 1 for filter e.g. '0' for imputation at Sanger, '1' for imputation at umich).", true, true),
     score("s", "score", "Attribute used for imputation score in the vcf file (e.g. 'INFO' for imputation at Sanger, 'R2' for imputation at umich).", true, true);
 
     /**

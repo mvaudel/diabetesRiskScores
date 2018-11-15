@@ -47,8 +47,8 @@ public class Test {
                 while (iterator.hasNext() && cpt++ < 1) {
 
                     VariantContext variantContext = iterator.next();
-//                    System.out.println("Attributes Sanger");
-//                    System.out.println(variantContext.getCommonInfo().getAttributes());
+                    System.out.println("Attributes Sanger");
+                    System.out.println(variantContext.getCommonInfo().getAttributes());
 
                 }
             }

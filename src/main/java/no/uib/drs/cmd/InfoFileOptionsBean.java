@@ -1,6 +1,7 @@
 package no.uib.drs.cmd;
 
 import java.io.File;
+import no.uib.drs.io.vcf.VcfSettings;
 import org.apache.commons.cli.CommandLine;
 
 /**
@@ -22,6 +23,10 @@ public class InfoFileOptionsBean {
      * The file where to write the scores.
      */
     public final File destinationFile;
+    /**
+     * The vcf parsing settings.
+     */
+    public final VcfSettings vcfSettings;
 
     /**
      * Constructor. Parses the command line options and conducts minimal sanity check.
@@ -66,6 +71,21 @@ public class InfoFileOptionsBean {
             throw new IllegalArgumentException("Output folder (" + destinationFile.getParent() + ") not found.");
 
         }
+        
+        
+        // vcf 
+        
+        String typedFlag = aLine.getOptionValue(InfoFileOptions.typed.opt);
+        String filterString = aLine.getOptionValue(InfoFileOptions.filter.opt);
+        String scoreFlag = aLine.getOptionValue(InfoFileOptions.score.opt);
+                
+        if (!filterString.equals("0") && !filterString.equals("1")) {
+
+            throw new IllegalArgumentException("Input for filter not recognized. Supported input: 0, 1.");
+            
+        }
+        
+        vcfSettings = new VcfSettings(typedFlag, filterString.equals("1"), scoreFlag);
         
         
         // Variants file
