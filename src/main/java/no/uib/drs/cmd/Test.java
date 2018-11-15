@@ -23,20 +23,22 @@ public class Test {
 
         try (VCFFileReader reader = new VCFFileReader(new File("/mnt/archive/mody/gw/vcf/tmp/mody_1.vcf.gz"))) {
 
-            try (CloseableIterator<VariantContext> iterator = reader.iterator()) {
+            try (CloseableIterator<VariantContext> iterator = reader.query("22", 51057923, 51057923)) {
 
                 while (iterator.hasNext()) {
 
                     VariantContext variantContext = iterator.next();
-                    Map<String, Object> attribute = variantContext.getGenotype(0).getExtendedAttributes();
-                    
-                    if (attribute.size() > 2) {
                         
-                    System.out.println("Attributes Umich");
+                    System.out.println("Info " + variantContext.getID());
+                    System.out.println(variantContext.getCommonInfo().getAttributes());
+                        
+                    Map<String, Object> attribute = variantContext.getGenotype(0).getExtendedAttributes();
+                    System.out.println("Attributes " + variantContext.getID());
                     System.out.println(attribute);
-                    break;
-
-                    }
+                        
+                    attribute = variantContext.getGenotype(10).getExtendedAttributes();
+                    System.out.println("Attributes " + variantContext.getID());
+                    System.out.println(attribute);
                 }
             }
         }
