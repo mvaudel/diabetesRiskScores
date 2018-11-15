@@ -1,14 +1,24 @@
 package no.uib.drs.cmd;
 
+import htsjdk.samtools.util.CloseableIterator;
+import htsjdk.variant.variantcontext.Allele;
+import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFFileReader;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import no.uib.drs.DiabetesRiskScore;
+import static no.uib.drs.io.Utils.getFileReader;
 import static no.uib.drs.io.Utils.getVcfIndexFile;
 import static no.uib.drs.io.Utils.lineSeparator;
+import no.uib.drs.io.flat.SimpleFileReader;
 import no.uib.drs.io.flat.SimpleGzWriter;
 import no.uib.drs.io.json.SimpleObjectMapper;
 import no.uib.drs.io.vcf.GenotypeProvider;
@@ -24,11 +34,11 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 
 /**
- * This class writes the summary for a given score on a set of vcf files.
+ * This command line creates a file containing mapping of proxies.
  *
  * @author Marc Vaudel
  */
-public class ComputeScore {
+public class ProxyFile {
 
     /**
      * Main method.
@@ -58,55 +68,55 @@ public class ComputeScore {
         try {
 
             Options lOptions = new Options();
-            ComputeScoreOptions.createOptionsCLI(lOptions);
+            ProxyFileOptions.createOptionsCLI(lOptions);
             CommandLineParser parser = new DefaultParser();
             CommandLine commandLine = parser.parse(lOptions, args);
 
-            ComputeScoreOptionsBean bean = new ComputeScoreOptionsBean(commandLine);
-
-            writeScores(bean.scoreDetailsFile, bean.proxiesMapFile, bean.vcfFiles, bean.variantDetailsFiles, bean.destinationFile);
+            ProxyFileOptionsBean bean = new ProxyFileOptionsBean(commandLine);
 
         } catch (Throwable e) {
 
             e.printStackTrace();
         }
-    }
-
-    public ComputeScore() {
 
     }
-
-    private static void writeScores(File scoreDetailsFile, File proxiesMapFile, File[] vcfFiles, File[] variantDetailsFiles, File destinationFile) {
+    
+    private static void mapProxies(File scoreDetailsFile, File[] proxyFiles, File[] vcfFiles, File[] variantDetailsFiles, File destinationFile) {
 
         ProgressHandler progressHandler = new ProgressHandler();
 
-        String mainTaskName = "1. Computing GRS";
+        String mainTaskName = "1. Mapping proxies";
         progressHandler.start(mainTaskName);
 
         String taskName = "1.1 Loading score details";
         progressHandler.start(taskName);
 
         RiskScore riskScore = SimpleObjectMapper.read(scoreDetailsFile, RiskScore.class);
-        VariantFeatureMap variantFeatureMap = new VariantFeatureMap(riskScore);
 
         progressHandler.end(taskName);
 
         taskName = "1.2 Loading proxies";
         progressHandler.start(taskName);
 
-        HashMap<String, String> proxyIds = proxiesMapFile == null ? new HashMap<>(0) : Proxy.getProxyMap(proxiesMapFile);
+        HashMap<String, HashSet<String>> proxyMap = getProxyMap(proxyFiles);
+        
+        HashSet<String> allSnps = proxyMap.entrySet().stream()
+                .flatMap(entry -> Stream.concat(Stream.of(entry.getKey()), entry.getValue().stream()))
+                .collect(Collectors.toCollection(HashSet::new));
 
         progressHandler.end(taskName);
 
         taskName = "1.3 Loading variant details";
         progressHandler.start(taskName);
 
-        VariantDetailsProvider variantDetailsProvider = new VariantDetailsProvider(variantFeatureMap.variantIds, proxyIds);
+        VariantDetailsProvider variantDetailsProvider = new VariantDetailsProvider(allSnps, null);
+        Arrays.stream(vcfFiles)
+                .parallel()
+                .forEach(vcfFile -> variantDetailsProvider.addVariants(vcfFile, vcfFile.getName()));
+
         IntStream.range(0, variantDetailsFiles.length)
                 .parallel()
                 .forEach(i -> variantDetailsProvider.addVariants(variantDetailsFiles[i], vcfFiles[i].getName()));
-
-        HashMap<String, Proxy> proxiesMap = Proxy.getProxyMap(proxyIds, variantDetailsProvider);
 
         progressHandler.end(taskName);
 
@@ -118,43 +128,69 @@ public class ComputeScore {
 
         progressHandler.end(taskName);
 
-        taskName = "1.5 Computing scores";
+        taskName = "1.5 Selecting best proxy";
         progressHandler.start(taskName);
-
-        ScoreComputer scoreComputer = new ScoreComputer(vcfFiles, variantDetailsProvider);
-        double[] scores = scoreComputer.computeRiskScores(riskScore, proxiesMap);
-        ArrayList<String> sampleNames = scoreComputer.getSampleNames();
-
+        
+        
+        
         progressHandler.end(taskName);
 
         taskName = "1.6 Exporting results";
         progressHandler.start(taskName);
 
-        exportResults(destinationFile, sampleNames, scores);
+        
 
         progressHandler.end(taskName);
 
         progressHandler.end(mainTaskName);
 
     }
-
-    /**
-     * Exports the score results to the file.
-     *
-     * @param destinationFile the destination file
-     * @param sampleNames the name of the samples
-     * @param scores the scores array
-     */
-    private static void exportResults(File destinationFile, ArrayList<String> sampleNames, double[] scores) {
-
-        try (SimpleGzWriter writer = new SimpleGzWriter(destinationFile)) {
-
-            writer.writeLine("Sample", "Score");
-
-            IntStream.range(0, sampleNames.size())
-                    .forEach(i -> writer.writeLine(sampleNames.get(i), Double.toString(scores[i])));
-
+    
+    private static HashMap<String, String> selectBestProxy(HashMap<String, HashSet<String>> proxyMap, VariantDetailsProvider variantDetailsProvider) {
+        
+        return null;
+        
+    }
+    
+    private static HashMap<String, HashSet<String>> getProxyMap(File[] proxiesFiles) {
+        
+        return Arrays.stream(proxiesFiles)
+                .collect(Collectors.toMap(
+                        file -> getSnpId(file), 
+                        file -> getProxies(file), 
+                        (a, b) -> a, 
+                        HashMap::new));
+        
+    }
+    
+    private static String getSnpId(File proxyFile) {
+        
+        String fileName = proxyFile.getName();
+        
+        return fileName.substring(0, fileName.indexOf(".snp"));
+        
+    }
+    
+    private static HashSet<String> getProxies(File proxyFile) {
+        
+        HashSet<String> results = new HashSet<>(1);
+        
+        try (SimpleFileReader reader = getFileReader(proxyFile)) {
+            
+            String line;
+            
+            while ((line = reader.readLine()) != null) {
+                
+                if (!(line = line.trim()).equals("")) {
+                    
+                    results.add(line);
+                    
+                }
+            }
         }
+        
+        return results;
+        
     }
 
     /**
@@ -167,10 +203,10 @@ public class ComputeScore {
             lPrintWriter.print("==================================" + lineSeparator);
             lPrintWriter.print("        DiabetesRiskScores        " + lineSeparator);
             lPrintWriter.print("               ****               " + lineSeparator);
-            lPrintWriter.print("  Score Computation Command Line  " + lineSeparator);
+            lPrintWriter.print("          Proxy Map File          " + lineSeparator);
             lPrintWriter.print("==================================" + lineSeparator);
             lPrintWriter.print(lineSeparator
-                    + "The ComputeScore command line computes risk scores from vcf files." + lineSeparator
+                    + "The ProxyFile command line selects the best proxy for each variant needed in the score." + lineSeparator
                     + lineSeparator
                     + "For documentation and bug report see https://github.com/mvaudel/diabetesRiskScores." + lineSeparator
                     + lineSeparator
@@ -180,8 +216,9 @@ public class ComputeScore {
                     + lineSeparator
                     + "----------------------" + lineSeparator
                     + lineSeparator);
-            lPrintWriter.print(ComputeScoreOptions.getOptionsAsString());
+            lPrintWriter.print(ProxyFileOptions.getOptionsAsString());
             lPrintWriter.flush();
         }
     }
+
 }

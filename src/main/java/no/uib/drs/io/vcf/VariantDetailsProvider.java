@@ -2,6 +2,7 @@ package no.uib.drs.io.vcf;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 import static no.uib.drs.io.Utils.getFileReader;
 import no.uib.drs.io.flat.SimpleFileReader;
@@ -44,13 +45,13 @@ public class VariantDetailsProvider {
 
     /**
      * Constructor.
-     * 
-     * @param variantFeatureMap variant to features map
+     *
+     * @param variants variants to load
      * @param proxyIds map of id to proxy
      */
-    public VariantDetailsProvider(VariantFeatureMap variantFeatureMap, HashMap<String, String> proxyIds) {
+    public VariantDetailsProvider(HashSet<String> variants, HashMap<String, String> proxyIds) {
 
-        snpFound = variantFeatureMap.variantIds.stream()
+        snpFound = variants.stream()
                 .map(id -> proxyIds.containsKey(id) ? proxyIds.get(id) : id)
                 .collect(Collectors.toMap(
                         id -> id,
@@ -61,7 +62,8 @@ public class VariantDetailsProvider {
     }
 
     /**
-     * Parses the variant details from the given table and stores them in the internal maps.
+     * Parses the variant details from the given table and stores them in the
+     * internal maps.
      *
      * @param snpTable the snp table as exported from the genotyping pipeline
      * @param vcfName the name of the vcf file
@@ -105,7 +107,7 @@ public class VariantDetailsProvider {
                             case 3:
                                 id = new String(lineChars, lastSeparator + 1, i - lastSeparator - 1);
 
-                                if (!snpFound.containsKey(id)) {
+                                if (snpFound != null && !snpFound.containsKey(id)) {
                                     break OUTER;
                                 }
 
@@ -133,19 +135,23 @@ public class VariantDetailsProvider {
                     maf = Double.parseDouble(new String(lineChars, lastSeparator + 1, lineChars.length - lastSeparator - 1));
 
                     Variant variant = new Variant(id, chr, bp, ref, alt, maf);
-                    
+
                     mutex.acquire();
-                    
+
                     variantDetailsMap.put(id, variant);
                     variantFileMap.put(id, vcfName);
-                    
-                    snpFound.put(id, true);
 
-                    allFound = snpFound.values().stream()
-                            .allMatch(a -> a);
-                    
+                    if (snpFound != null) {
+
+                        snpFound.put(id, true);
+
+                        allFound = snpFound.values().stream()
+                                .allMatch(a -> a);
+
+                    }
+
                     mutex.release();
-                    
+
                 }
             }
         }
@@ -161,12 +167,12 @@ public class VariantDetailsProvider {
     public Variant getVariant(String id) {
         return variantDetailsMap.get(id);
     }
-    
+
     /**
      * Returns the name of the vcf file where the given variant can be found.
-     * 
+     *
      * @param id the id of the variant
-     * 
+     *
      * @return the name of the vcf file where the given variant can be found
      */
     public String getVcfName(String id) {

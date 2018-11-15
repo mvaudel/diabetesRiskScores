@@ -13,9 +13,6 @@ import static no.uib.drs.io.Utils.getFileReader;
 import static no.uib.drs.io.Utils.lineSeparator;
 import no.uib.drs.io.flat.SimpleFileReader;
 import no.uib.drs.io.flat.SimpleGzWriter;
-import no.uib.drs.io.json.SimpleObjectMapper;
-import no.uib.drs.model.score.RiskScore;
-import no.uib.drs.model.score.VariantFeatureMap;
 import no.uib.drs.utils.ProgressHandler;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -57,7 +54,7 @@ public class InfoFile {
         try {
 
             Options lOptions = new Options();
-            ComputeScoreOptions.createOptionsCLI(lOptions);
+            InfoFileOptions.createOptionsCLI(lOptions);
             CommandLineParser parser = new DefaultParser();
             CommandLine commandLine = parser.parse(lOptions, args);
 
@@ -74,7 +71,7 @@ public class InfoFile {
 
     /**
      * Writes a file containin information on variants.
-     * 
+     *
      * @param vcfFile the vcf file
      * @param destinationFile the output file
      * @param snpFile the file containing the ids of the variants to extract
@@ -105,9 +102,9 @@ public class InfoFile {
 
     /**
      * Loads the ids of variants to extract from a file. One id per line.
-     * 
+     *
      * @param snpFile the file containing the variants
-     * 
+     *
      * @return the ids as set
      */
     private static HashSet<String> loadVariants(File snpFile) {
@@ -131,9 +128,10 @@ public class InfoFile {
     }
 
     /**
-     * Extracts the snp details from the vcf file.
-     * CHR, BP, ID, REF, ALT, MAF, are extracted. One line per alternative allele per variant.
-     * 
+     * Extracts the snp details from the vcf file. CHR, BP, ID, REF, ALT, MAF,
+     * are extracted. One line per variant. Multi-allelic and monomorphic
+     * variants are excluded.
+     *
      * @param vcfFile the vcf file
      * @param destinationFile the destination file
      * @param variants the ids of variants to select, ignored if null
@@ -160,32 +158,36 @@ public class InfoFile {
                             String ref = variantContext.getReference().getBaseString();
 
                             List<Allele> altAlleles = variantContext.getAlternateAlleles();
+                            
 
-                            for (int i = 0; i < altAlleles.size(); i++) {
+                            if (altAlleles.size() == 1) {
 
-                                String alt = altAlleles.get(i).getBaseString();
-                                
-                                double nAlt = (double) variantContext.getGenotypes().stream()
-                                        .parallel()
-                                        .flatMap(genotype -> genotype.getAlleles().stream())
-                                        .filter(allele -> allele.getBaseString().equals(alt))
-                                        .count();
-                                double nAll = (double) variantContext.getGenotypes().stream()
-                                        .parallel()
-                                        .flatMap(genotype -> genotype.getAlleles().stream())
-                                        .count();
-                                
-                                double maf = nAlt / nAll;
-                                
-                                writer.writeLine(
-                                        contig,
-                                        Integer.toString(start),
-                                        variantId,
-                                        ref,
-                                        alt,
-                                        Double.toString(maf)
-                                );
+                                String alt = altAlleles.get(0).getBaseString();
 
+                                if (!alt.equals(ref)) {
+
+                                    double nAlt = (double) variantContext.getGenotypes().stream()
+                                            .parallel()
+                                            .flatMap(genotype -> genotype.getAlleles().stream())
+                                            .filter(allele -> allele.getBaseString().equals(alt))
+                                            .count();
+                                    double nAll = (double) variantContext.getGenotypes().stream()
+                                            .parallel()
+                                            .flatMap(genotype -> genotype.getAlleles().stream())
+                                            .count();
+
+                                    double maf = nAlt / nAll;
+
+                                    writer.writeLine(
+                                            contig,
+                                            Integer.toString(start),
+                                            variantId,
+                                            ref,
+                                            alt,
+                                            Double.toString(maf)
+                                    );
+
+                                }
                             }
                         }
                     }
@@ -217,7 +219,7 @@ public class InfoFile {
                     + lineSeparator
                     + "----------------------" + lineSeparator
                     + lineSeparator);
-            lPrintWriter.print(ComputeScoreOptions.getOptionsAsString());
+            lPrintWriter.print(InfoFileOptions.getOptionsAsString());
             lPrintWriter.flush();
         }
     }

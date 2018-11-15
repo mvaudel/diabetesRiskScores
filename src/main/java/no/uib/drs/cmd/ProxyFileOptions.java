@@ -9,13 +9,14 @@ import org.apache.commons.cli.Options;
  *
  * @author Marc Vaudel
  */
-public enum ComputeScoreOptions {
+public enum ProxyFileOptions {
 
     score("s", "score", "The score details as json file.", true, true),
     vcf("v", "vcf", "The vcf files as comma separated list or parent folder.", true, true),
     variants("i", "info", "Information file on the variants needed for the score and proxies.", true, true),
-    out("o", "out", "File where to write the scores.", true, true),
-    proxies("p", "proxies", "Proxies to use for specific markers as text file.", false, true);
+    out("o", "out", "File where to write the proxy mapping.", true, true),
+    proxies("p", "proxies", "Proxies files (snpId.snp) or parent folder.", true, true),
+    threshold("t", "thres", "Imputation score threshold.", false, true);
 
     /**
      * The short option.
@@ -48,7 +49,7 @@ public enum ComputeScoreOptions {
      * @param mandatory is the option mandatory
      * @param hasArg has the option an argument
      */
-    private ComputeScoreOptions(String opt, String longOpt, String description, boolean mandatory, boolean hasArg) {
+    private ProxyFileOptions(String opt, String longOpt, String description, boolean mandatory, boolean hasArg) {
         this.opt = opt;
         this.longOpt = longOpt;
         this.description = description;
@@ -64,7 +65,7 @@ public enum ComputeScoreOptions {
      */
     public static void createOptionsCLI(Options options) {
 
-        for (ComputeScoreOptions option : values()) {
+        for (ProxyFileOptions option : values()) {
 
             options.addOption(option.opt, option.longOpt, option.hasArg, option.description);
 
