@@ -9,13 +9,11 @@ import org.apache.commons.cli.Options;
  *
  * @author Marc Vaudel
  */
-public enum ComputeScoreOptions {
+public enum InfoFileOptions {
 
-    score("s", "score", "The score details as json file.", true, true),
     vcf("v", "vcf", "The vcf files as comma separated list.", true, true),
-    variants("i", "info", "Information file on the variants needed for the score.", true, true),
-    out("o", "out", "File where to write the scores.", true, true),
-    proxies("p", "proxies", "Proxies to use for specific markers as text file.", false, true);
+    out("o", "out", "File where to write the file.", true, true),
+    vatriants("s", "snps", "List of variants to include. All variants are used if not provided.", false, true);
 
     /**
      * The short option.
@@ -48,7 +46,7 @@ public enum ComputeScoreOptions {
      * @param mandatory is the option mandatory
      * @param hasArg has the option an argument
      */
-    private ComputeScoreOptions(String opt, String longOpt, String description, boolean mandatory, boolean hasArg) {
+    private InfoFileOptions(String opt, String longOpt, String description, boolean mandatory, boolean hasArg) {
         this.opt = opt;
         this.longOpt = longOpt;
         this.description = description;
@@ -64,7 +62,7 @@ public enum ComputeScoreOptions {
      */
     public static void createOptionsCLI(Options options) {
 
-        for (ComputeScoreOptions option : values()) {
+        for (InfoFileOptions option : values()) {
 
             options.addOption(option.opt, option.longOpt, option.hasArg, option.description);
 

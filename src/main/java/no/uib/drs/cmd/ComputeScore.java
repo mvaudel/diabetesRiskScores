@@ -31,7 +31,7 @@ import org.apache.commons.cli.Options;
 public class ComputeScore {
 
     /**
-     * Writes a summary.
+     * Main method.
      *
      * @param args the command line arguments
      */
@@ -76,30 +76,6 @@ public class ComputeScore {
 
     }
 
-    private static void printHelp() {
-
-        PrintWriter lPrintWriter = new PrintWriter(System.out);
-        lPrintWriter.print(lineSeparator);
-        lPrintWriter.print("=================================" + lineSeparator);
-        lPrintWriter.print("DiabetesRiskScores - Command Line" + lineSeparator);
-        lPrintWriter.print("=================================" + lineSeparator);
-        lPrintWriter.print(lineSeparator
-                + "The DiabetesRiskScores command line computes risk scores from vcf files." + lineSeparator
-                + lineSeparator
-                + "For documentation and bug report see https://github.com/mvaudel/diabetesRiskScores." + lineSeparator
-                + lineSeparator
-                + "----------------------"
-                + lineSeparator
-                + "OPTIONS"
-                + lineSeparator
-                + "----------------------" + lineSeparator
-                + lineSeparator);
-        lPrintWriter.print(ComputeScoreOptions.getOptionsAsString());
-        lPrintWriter.flush();
-        lPrintWriter.close();
-
-    }
-
     private static void writeScores(File scoreDetailsFile, File proxiesMapFile, File[] vcfFiles, File[] variantDetailsFiles, File destinationFile) {
 
         ProgressHandler progressHandler = new ProgressHandler();
@@ -118,7 +94,7 @@ public class ComputeScore {
         taskName = "1.2 Loading proxies";
         progressHandler.start(taskName);
 
-        HashMap<String, String> proxyIds = Proxy.getProxyMap(proxiesMapFile);
+        HashMap<String, String> proxyIds = proxiesMapFile == null ? new HashMap<>(0) : Proxy.getProxyMap(proxiesMapFile);
 
         progressHandler.end(taskName);
 
@@ -178,6 +154,34 @@ public class ComputeScore {
             IntStream.range(0, sampleNames.size())
                     .forEach(i -> writer.writeLine(sampleNames.get(i), Double.toString(scores[i])));
 
+        }
+    }
+
+    /**
+     * Prints basic help
+     */
+    private static void printHelp() {
+
+        try (PrintWriter lPrintWriter = new PrintWriter(System.out)) {
+            lPrintWriter.print(lineSeparator);
+            lPrintWriter.print("==================================" + lineSeparator);
+            lPrintWriter.print("        DiabetesRiskScores        " + lineSeparator);
+            lPrintWriter.print("               ****               " + lineSeparator);
+            lPrintWriter.print("  Score Computation Command Line  " + lineSeparator);
+            lPrintWriter.print("==================================" + lineSeparator);
+            lPrintWriter.print(lineSeparator
+                    + "The ComputeScore command line computes risk scores from vcf files." + lineSeparator
+                    + lineSeparator
+                    + "For documentation and bug report see https://github.com/mvaudel/diabetesRiskScores." + lineSeparator
+                    + lineSeparator
+                    + "----------------------"
+                    + lineSeparator
+                    + "OPTIONS"
+                    + lineSeparator
+                    + "----------------------" + lineSeparator
+                    + lineSeparator);
+            lPrintWriter.print(ComputeScoreOptions.getOptionsAsString());
+            lPrintWriter.flush();
         }
     }
 }

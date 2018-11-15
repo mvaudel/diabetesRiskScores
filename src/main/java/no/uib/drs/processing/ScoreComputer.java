@@ -55,7 +55,11 @@ public class ScoreComputer {
                         (a, b) -> a,
                         HashMap::new));
 
-        sampleNames = vcfFileReaders.values().stream().findAny().get().getFileHeader().getSampleNamesInOrder();
+        sampleNames = vcfFileReaders.values().stream()
+                .findAny()
+                .get()
+                .getFileHeader()
+                .getSampleNamesInOrder();
 
     }
 

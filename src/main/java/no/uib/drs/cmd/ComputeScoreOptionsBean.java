@@ -1,7 +1,6 @@
 package no.uib.drs.cmd;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import org.apache.commons.cli.CommandLine;
@@ -131,7 +130,7 @@ public class ComputeScoreOptionsBean {
 
             if (!proxiesMapFile.exists()) {
 
-                throw new IllegalArgumentException("File provided for " + ComputeScoreOptions.proxies.longOpt + " (" + filePath + ") not found.");
+                throw new IllegalArgumentException("Proxies file (" + filePath + ") not found.");
 
             }
         } else {
