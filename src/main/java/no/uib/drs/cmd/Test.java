@@ -24,12 +24,17 @@ public class Test {
 
             try (CloseableIterator<VariantContext> iterator = reader.iterator()) {
 
-                while (iterator.hasNext() && cpt++ < 10) {
+                while (iterator.hasNext()) {
 
                     VariantContext variantContext = iterator.next();
+                    Object attribute = variantContext.getGenotype(0).getExtendedAttributes().get("GT");
+                    if (attribute != null) {
+                        
                     System.out.println("Attributes Umich");
-                    System.out.println(variantContext.getGenotype(0).getExtendedAttributes());
+                    System.out.println(attribute);
+                    break;
 
+                    }
                 }
             }
         }
