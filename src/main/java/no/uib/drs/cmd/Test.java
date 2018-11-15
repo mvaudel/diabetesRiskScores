@@ -27,7 +27,7 @@ public class Test {
                 while (iterator.hasNext()) {
 
                     VariantContext variantContext = iterator.next();
-                    Object attribute = variantContext.getGenotype(0).getExtendedAttributes().get("GT");
+                    Object attribute = variantContext.getGenotype(0).getExtendedAttributes().get("GP");
                     if (attribute != null) {
                         
                     System.out.println("Attributes Umich");
