@@ -18,7 +18,7 @@ public class Test {
      */
     public static void main(String[] args) {
 
-        int cpt = 0;
+        int cpt = 10;
 
         try (VCFFileReader reader = new VCFFileReader(new File("/mnt/archive/mody/gw/vcf/tmp/mody_22.vcf.gz"))) {
 
@@ -38,7 +38,7 @@ public class Test {
             }
         }
         
-        cpt = 0;
+        cpt = 10;
 
         try (VCFFileReader reader = new VCFFileReader(new File("/mnt/archive/mody/gw/vcf/tmp/22-dbsnp-unique-common.vcf.gz"))) {
 
