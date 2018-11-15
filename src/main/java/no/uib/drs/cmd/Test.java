@@ -21,7 +21,7 @@ public class Test {
 
         int cpt = 0;
 
-        try (VCFFileReader reader = new VCFFileReader(new File("/mnt/archive/mody/gw/vcf/tmp/mody_22.vcf.gz"))) {
+        try (VCFFileReader reader = new VCFFileReader(new File("/mnt/archive/mody/gw/vcf/tmp/mody_1.vcf.gz"))) {
 
             try (CloseableIterator<VariantContext> iterator = reader.iterator()) {
 
