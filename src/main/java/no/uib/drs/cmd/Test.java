@@ -33,7 +33,7 @@ public class Test {
                     System.out.println(variantContext.getCommonInfo().getAttributes());
                         
                     System.out.println("Filters " + variantContext.getID());
-                    System.out.println(variantContext.getGenotype(10).getFilters());
+                    System.out.println(variantContext.getFilters());
                 }
             }
         }
