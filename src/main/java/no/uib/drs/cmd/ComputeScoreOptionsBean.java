@@ -32,6 +32,10 @@ public class ComputeScoreOptionsBean {
      * The file where to write the scores.
      */
     public final File destinationFile;
+    /**
+     * The imputation score threshold.
+     */
+    public final double scoreThreshold;
 
     /**
      * Constructor. Parses the command line options and conducts minimal sanity check.
@@ -94,13 +98,13 @@ public class ComputeScoreOptionsBean {
                 .map(path -> new File(path))
                 .toArray(File[]::new);
         
-        if (vcfFiles.length == 0) {
+        if (variantDetailsFiles.length == 0) {
             
                 throw new IllegalArgumentException("No variant details file found at (" + filePath + ") not found.");
             
         }
         
-        Arrays.stream(vcfFiles)
+        Arrays.stream(variantDetailsFiles)
                 .filter(file -> !file.exists())
                 .forEach(file -> {
                     throw new IllegalArgumentException("Variants details file (" + file.getAbsolutePath() + ") not found.");
@@ -135,6 +139,19 @@ public class ComputeScoreOptionsBean {
             }
         } else {
             proxiesMapFile = null;
+        }
+        
+        
+        // Imputation score threshold
+
+        if (aLine.hasOption(ComputeScoreOptions.threshold.opt)) {
+
+            String value = aLine.getOptionValue(ComputeScoreOptions.threshold.opt);
+
+            scoreThreshold = Double.parseDouble(value);
+            
+        } else {
+            scoreThreshold = Double.NaN;
         }
     }
 }

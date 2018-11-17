@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import static no.uib.drs.io.Utils.getFileReader;
 import no.uib.drs.io.flat.SimpleFileReader;
 import no.uib.drs.model.biology.Variant;
-import no.uib.drs.model.score.VariantFeatureMap;
 import no.uib.drs.utils.SimpleSemaphore;
 
 /**
@@ -66,13 +65,16 @@ public class VariantDetailsProvider {
      * internal maps.
      *
      * @param snpTable the snp table as exported from the genotyping pipeline
-     * @param vcfName the name of the vcf file
      */
-    public void addVariants(File snpTable, String vcfName) {
+    public void addVariants(File snpTable) {
 
         try (SimpleFileReader reader = getFileReader(snpTable)) {
 
             String line = reader.readLine();
+            String vcfName = line.substring(2);
+            
+            line = reader.readLine();
+            
             while ((line = reader.readLine()) != null && !allFound) {
 
                 char[] lineChars = line.toCharArray();
@@ -85,6 +87,8 @@ public class VariantDetailsProvider {
                 int bp = -1;
                 String ref = null;
                 String alt = null;
+                boolean typed = false;
+                double score = -1.0;
                 double maf;
 
                 OUTER:
@@ -93,19 +97,21 @@ public class VariantDetailsProvider {
                     if (lineChars[i] == separator) {
 
                         nSeparators++;
+                        
+                        String input = new String(lineChars, lastSeparator + 1, i - lastSeparator - 1);
 
                         switch (nSeparators) {
 
                             case 1:
-                                chr = new String(lineChars, lastSeparator + 1, i - lastSeparator - 1);
+                                chr = input;
                                 break;
 
                             case 2:
-                                bp = Integer.parseInt(new String(lineChars, lastSeparator + 1, i - lastSeparator - 1));
+                                bp = Integer.parseInt(input);
                                 break;
 
                             case 3:
-                                id = new String(lineChars, lastSeparator + 1, i - lastSeparator - 1);
+                                id = input;
 
                                 if (snpFound != null && !snpFound.containsKey(id)) {
                                     break OUTER;
@@ -114,11 +120,19 @@ public class VariantDetailsProvider {
                                 break;
 
                             case 4:
-                                ref = new String(lineChars, lastSeparator + 1, i - lastSeparator - 1);
+                                ref = input;
                                 break;
 
                             case 5:
-                                alt = new String(lineChars, lastSeparator + 1, i - lastSeparator - 1);
+                                alt = input;
+                                break;
+
+                            case 6:
+                                typed = input.equals("1");
+                                break;
+
+                            case 7:
+                                score = Double.parseDouble(input);
                                 break;
 
                             default:
@@ -134,7 +148,7 @@ public class VariantDetailsProvider {
 
                     maf = Double.parseDouble(new String(lineChars, lastSeparator + 1, lineChars.length - lastSeparator - 1));
 
-                    Variant variant = new Variant(id, chr, bp, ref, alt, maf);
+                    Variant variant = new Variant(id, chr, bp, ref, alt, maf, typed, score);
 
                     mutex.acquire();
 

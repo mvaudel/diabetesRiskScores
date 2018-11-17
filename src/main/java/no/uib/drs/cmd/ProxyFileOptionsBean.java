@@ -21,10 +21,6 @@ public class ProxyFileOptionsBean {
      */
     public final File[] proxiesMapFiles;
     /**
-     * the vcf files.
-     */
-    public final File[] vcfFiles;
-    /**
      * The variant details files.
      */
     public final File[] variantDetailsFiles;
@@ -62,39 +58,18 @@ public class ProxyFileOptionsBean {
 
         }
 
-        // VCF files or folder
-        filePath = aLine.getOptionValue(ProxyFileOptions.vcf.opt);
-
-        vcfFiles = Arrays.stream(filePath.split(","))
-                .map(path -> new File(path))
-                .flatMap(file -> file.isDirectory() ? Arrays.stream(file.listFiles()) : Stream.of(file))
-                .filter(file -> file.getName().toLowerCase().endsWith(".vcf") || file.getName().toLowerCase().endsWith(".vcf.gz"))
-                .toArray(File[]::new);
-
-        if (vcfFiles.length == 0) {
-
-            throw new IllegalArgumentException("No vcf file found at (" + filePath + ").");
-
-        }
-
-        Arrays.stream(vcfFiles)
-                .filter(file -> !file.exists())
-                .forEach(file -> {
-                    throw new IllegalArgumentException("Vcf file (" + file.getAbsolutePath() + ") not found.");
-                });
-
         // Variant details files
         variantDetailsFiles = Arrays.stream(filePath.split(","))
                 .map(path -> new File(path))
                 .toArray(File[]::new);
 
-        if (vcfFiles.length == 0) {
+        if (variantDetailsFiles.length == 0) {
 
             throw new IllegalArgumentException("No variant details file found at (" + filePath + ") not found.");
 
         }
 
-        Arrays.stream(vcfFiles)
+        Arrays.stream(variantDetailsFiles)
                 .filter(file -> !file.exists())
                 .forEach(file -> {
                     throw new IllegalArgumentException("Variants details file (" + file.getAbsolutePath() + ") not found.");

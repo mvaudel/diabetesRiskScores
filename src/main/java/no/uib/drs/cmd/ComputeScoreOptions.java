@@ -15,7 +15,8 @@ public enum ComputeScoreOptions {
     vcf("v", "vcf", "The vcf files as comma separated list or parent folder.", true, true),
     variants("i", "info", "Information file on the variants needed for the score and proxies.", true, true),
     out("o", "out", "File where to write the scores.", true, true),
-    proxies("p", "proxies", "Proxies to use for specific markers as text file.", false, true);
+    proxies("p", "proxies", "Proxies to use for specific markers as text file.", false, true),
+    threshold("t", "score", "Minimal imputation score required for a marker to be considered.", false, true);
 
     /**
      * The short option.

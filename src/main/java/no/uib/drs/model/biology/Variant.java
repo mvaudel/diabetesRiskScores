@@ -31,6 +31,14 @@ public class Variant {
      * The estimated maf.
      */
     public final double maf;
+    /**
+     * Boolean indicating whether the marker was genotyped.
+     */
+    public final boolean genotyped;
+    /**
+     * Score of the imputation.
+     */
+    public final double imputationScore;
     
     /**
      * Constructor.
@@ -41,8 +49,10 @@ public class Variant {
      * @param ref The reference allele
      * @param alt The alternative allele
      * @param maf The estimated maf in this cohort
+     * @param genotyped Boolean indicating whether the marker was genotyped
+     * @param imputationScore Score of the imputation
      */
-    public Variant(String id, String chr, int bp, String ref, String alt, double maf) {
+    public Variant(String id, String chr, int bp, String ref, String alt, double maf, boolean genotyped, double imputationScore) {
         
         this.id = id;
         this.chr = chr;
@@ -50,6 +60,8 @@ public class Variant {
         this.ref = ref;
         this.alt = alt;
         this.maf = maf;
+        this.genotyped = genotyped;
+        this.imputationScore = imputationScore;
         
     }
     

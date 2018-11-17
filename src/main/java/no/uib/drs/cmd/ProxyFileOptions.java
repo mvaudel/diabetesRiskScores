@@ -12,11 +12,9 @@ import org.apache.commons.cli.Options;
 public enum ProxyFileOptions {
 
     score("s", "score", "The score details as json file.", true, true),
-    vcf("v", "vcf", "The vcf files as comma separated list or parent folder.", true, true),
     variants("i", "info", "Information file on the variants needed for the score and proxies.", true, true),
     out("o", "out", "File where to write the proxy mapping.", true, true),
-    proxies("p", "proxies", "Proxies files (snpId.snp) or parent folder.", true, true),
-    threshold("t", "thres", "Imputation score threshold.", false, true);
+    proxies("p", "proxies", "Proxies files (snpId.snp) or parent folder.", true, true);
 
     /**
      * The short option.

@@ -144,6 +144,8 @@ public class InfoFile {
         try (VCFFileReader vcfFileReader = new VCFFileReader(vcfFile)) {
 
             try (SimpleGzWriter writer = new SimpleGzWriter(destinationFile)) {
+                
+                writer.writeLine("# " + vcfFile.getName());
 
                 writer.writeLine("CHR", "BP", "ID", "REF", "ALT", "MAF", "TYPED", "SCORE");
 

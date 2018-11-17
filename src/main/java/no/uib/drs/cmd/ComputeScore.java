@@ -14,6 +14,7 @@ import no.uib.drs.io.json.SimpleObjectMapper;
 import no.uib.drs.io.vcf.GenotypeProvider;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
 import no.uib.drs.model.biology.Proxy;
+import no.uib.drs.model.biology.Variant;
 import no.uib.drs.model.score.RiskScore;
 import no.uib.drs.model.score.VariantFeatureMap;
 import no.uib.drs.processing.ScoreComputer;
@@ -64,7 +65,7 @@ public class ComputeScore {
 
             ComputeScoreOptionsBean bean = new ComputeScoreOptionsBean(commandLine);
 
-            writeScores(bean.scoreDetailsFile, bean.proxiesMapFile, bean.vcfFiles, bean.variantDetailsFiles, bean.destinationFile);
+            computeScores(bean.scoreDetailsFile, bean.proxiesMapFile, bean.vcfFiles, bean.variantDetailsFiles, bean.destinationFile, bean.scoreThreshold);
 
         } catch (Throwable e) {
 
@@ -72,11 +73,17 @@ public class ComputeScore {
         }
     }
 
-    public ComputeScore() {
-
-    }
-
-    private static void writeScores(File scoreDetailsFile, File proxiesMapFile, File[] vcfFiles, File[] variantDetailsFiles, File destinationFile) {
+    /**
+     * Computes the scores and writes them to the given file.
+     *
+     * @param scoreDetailsFile the file containing the score details
+     * @param proxiesMapFile the file containing the proxy mapping
+     * @param vcfFiles the vcf files
+     * @param variantDetailsFiles the variant details files
+     * @param destinationFile the file where to write the scores
+     * @param scoreThreshld the minimal imputation score to use
+     */
+    private static void computeScores(File scoreDetailsFile, File proxiesMapFile, File[] vcfFiles, File[] variantDetailsFiles, File destinationFile, double scoreThreshld) {
 
         ProgressHandler progressHandler = new ProgressHandler();
 
@@ -102,15 +109,41 @@ public class ComputeScore {
         progressHandler.start(taskName);
 
         VariantDetailsProvider variantDetailsProvider = new VariantDetailsProvider(variantFeatureMap.variantIds, proxyIds);
-        IntStream.range(0, variantDetailsFiles.length)
+        Arrays.stream(variantDetailsFiles)
                 .parallel()
-                .forEach(i -> variantDetailsProvider.addVariants(variantDetailsFiles[i], vcfFiles[i].getName()));
+                .forEach(file -> variantDetailsProvider.addVariants(file));
 
         HashMap<String, Proxy> proxiesMap = Proxy.getProxyMap(proxyIds, variantDetailsProvider);
 
         progressHandler.end(taskName);
 
-        taskName = "1.4 Setting up vcf file readers";
+        taskName = "1.4 Sanity checks";
+        progressHandler.start(taskName);
+
+        for (String id : variantFeatureMap.variantIds) {
+
+            String proxyId = proxiesMap.get(id).proxyId;
+
+            String usedId = proxyId == null ? id : proxyId;
+
+            if (variantDetailsProvider.getVariant(id) == null) {
+                throw new IllegalArgumentException("Variant " + usedId + " not found in the variant information file(s).");
+            }
+
+            Variant variant = variantDetailsProvider.getVariant(usedId);
+
+            if (!variant.genotyped && !Double.isNaN(scoreThreshld) && variant.imputationScore < scoreThreshld) {
+                if (proxyId == null) {
+                    throw new IllegalArgumentException("Variant " + usedId + " does not pass the imputation score threshold.");
+                } else {
+                    throw new IllegalArgumentException("Variant " + usedId + " proxy of " + id + " does not pass the imputation score threshold.");
+                }
+            }
+        }
+
+        progressHandler.end(taskName);
+
+        taskName = "1.5 Setting up vcf file readers";
         progressHandler.start(taskName);
 
         GenotypeProvider genotypeProvider = new GenotypeProvider();
@@ -118,7 +151,7 @@ public class ComputeScore {
 
         progressHandler.end(taskName);
 
-        taskName = "1.5 Computing scores";
+        taskName = "1.6 Computing scores";
         progressHandler.start(taskName);
 
         ScoreComputer scoreComputer = new ScoreComputer(vcfFiles, variantDetailsProvider);
@@ -127,7 +160,7 @@ public class ComputeScore {
 
         progressHandler.end(taskName);
 
-        taskName = "1.6 Exporting results";
+        taskName = "1.7 Exporting results";
         progressHandler.start(taskName);
 
         exportResults(destinationFile, sampleNames, scores);
