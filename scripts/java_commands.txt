@@ -1,1 +1,5 @@
-java -cp drs-0.0.1.jar no.uib.drs.cmd.Test
+# Test
+java -cp release/drs-0.0.1/drs-0.0.1.jar no.uib.drs.cmd.Test
+
+# Info
+java -cp release/drs-0.0.1/drs-0.0.1.jar no.uib.drs.cmd.InfoFile 
