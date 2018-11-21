@@ -1,0 +1,1 @@
+java -cp drs-0.0.1.jar no.uib.drs.cmd.Test
