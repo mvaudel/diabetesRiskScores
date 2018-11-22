@@ -31,9 +31,9 @@ do
     stem="${file%.*}"
     $plinkFolder/plink \
         --bfile $stem \
-        --update-name {$stem}.snplist \
+        --update-name $stem.snplist \
         --make-bed \
-        --out {$destinationStem}_rsid
+        --out ${destinationStem}_rsid
 done
 exit 1
 # Merge
