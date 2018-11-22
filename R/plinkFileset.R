@@ -33,8 +33,22 @@ files <- list.files(fileFolder)
 files <- files[startsWith(files, prefix) & !endsWith(files, "log")]
 
 # Extract stem
-files <- unique(substring(text = files, first = 1, last = regexpr("\\.[^\\.]*$", files) - 1))
-files <- paste(fileFolder, files, sep = "/")
+stems <- unique(substring(text = files, first = 1, last = regexpr("\\.[^\\.]*$", files) - 1))
+stemFiles <- file.path(fileFolder, stems)
 
 # Export
-writeLines(files, outputFile)
+writeLines(text = stemFiles, con = outputFile)
+
+# Extract snp_ids
+snpIds <- unlist(lapply(strsplit(x = stems, split = "\\."), "[[", 2))
+
+for (i in 1:length(stems)) {
+    
+    outputFile <- file.path(fileFolder, paste0(stem, "snplist"))
+    writeLines(text = snpIds[i], con = outputFile)
+    
+}
+
+
+
+
