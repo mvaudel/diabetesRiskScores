@@ -34,7 +34,7 @@ files <- files[startsWith(files, prefix) & !endsWith(files, "log")]
 
 # Extract stem
 stems <- unique(substring(text = files, first = 1, last = regexpr("\\.[^\\.]*$", files) - 1))
-stemFiles <- file.path(fileFolder, stems)
+stemFiles <- file.path(fileFolder, paste0(stems, "_rsid"))
 
 # Export
 writeLines(text = stemFiles, con = outputFile)
