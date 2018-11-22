@@ -44,7 +44,7 @@ snpIds <- unlist(lapply(strsplit(x = stems, split = "\\."), "[[", 2))
 
 for (i in 1:length(stems)) {
     
-    outputFile <- file.path(fileFolder, paste0(stem, "snplist"))
+    outputFile <- file.path(fileFolder, paste0(stems[i], "snplist"))
     writeLines(text = snpIds[i], con = outputFile)
     
 }
