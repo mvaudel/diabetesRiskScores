@@ -24,6 +24,15 @@ prefix <- args[2]
 outputFile <- args[3]
 
 
+## Functions
+
+getSnpIds <- function(x) {
+    
+    return(paste(x[2], paste(x[3], 4, sep = ":"), sep = " "))
+    
+}
+
+
 ## Script
 
 # List files
@@ -40,7 +49,7 @@ stemFiles <- file.path(fileFolder, paste0(stems, "_rsid"))
 writeLines(text = stemFiles, con = outputFile)
 
 # Extract snp_ids
-snpIds <- unlist(lapply(strsplit(x = stems, split = "\\."), "[[", 2))
+snpIds <- unlist(lapply(strsplit(x = stems, split = "\\."), FUN = getSnpIds))
 
 for (i in 1:length(stems)) {
     
