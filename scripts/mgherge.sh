@@ -35,7 +35,7 @@ do
         --make-bed \
         --out ${stem}_rsid
 done
-exit 1
+
 # Merge
 $plinkFolder/plink \
         --merge-list $directory/fileset \
