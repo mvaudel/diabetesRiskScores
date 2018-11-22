@@ -28,12 +28,12 @@ $repo/R/plinkFileset.R $directory "T2D_SNPs" $directory/fileset
 # Fix snp ids
 for file in "$directory"/*.bed
 do
-    stemName="${file%.*}"
-    echo $stemName
-#    $plinkFolder/plink \
-#        --bfile $destinationStem \
-#        --recode vcf \
-#        --out $destinationStem
+    stem="${file%.*}"
+    $plinkFolder/plink \
+        --bfile $stem \
+        --update-name {$stem}.snplist \
+        --make-bed \
+        --out {$destinationStem}_rsid
 done
 exit 1
 # Merge
