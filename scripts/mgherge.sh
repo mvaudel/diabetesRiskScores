@@ -33,7 +33,7 @@ do
         --bfile $stem \
         --update-name $stem.snplist \
         --make-bed \
-        --out ${destinationStem}_rsid
+        --out ${stem}_rsid
 done
 exit 1
 # Merge

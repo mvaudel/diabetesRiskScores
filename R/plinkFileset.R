@@ -28,7 +28,7 @@ outputFile <- args[3]
 
 getSnpIds <- function(x) {
     
-    return(paste(x[2], paste(x[3], 4, sep = ":"), sep = " "))
+    return(paste(paste(x[3], x[4], sep = ":"), x[2], sep = " "))
     
 }
 
