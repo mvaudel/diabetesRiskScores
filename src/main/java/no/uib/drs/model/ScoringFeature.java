@@ -1,5 +1,7 @@
 package no.uib.drs.model;
 
+import java.util.List;
+
 /**
  * A variant feature is a set of alleles that give a given weight to a score.
  *
@@ -7,7 +9,14 @@ package no.uib.drs.model;
  */
 public interface ScoringFeature {
     
-    public double getScoreContribution(String[] alleles);
+    /**
+     * Returns the score contribution for this feature.
+     * 
+     * @param alleles the alleles of the SNPs to score
+     * 
+     * @return the score contribution for this feature
+     */
+    public double getScoreContribution(List<String>[] alleles);
     /**
      * Returns the ids of the variants needed for this feature.
      * 

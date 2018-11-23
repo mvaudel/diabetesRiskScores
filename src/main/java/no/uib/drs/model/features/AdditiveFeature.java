@@ -1,21 +1,20 @@
 package no.uib.drs.model.features;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.List;
 import no.uib.drs.model.ScoringFeature;
-import no.uib.drs.model.biology.Proxy;
 
 /**
- * Feature scoring the status of a single allele.
+ * Feature adding weight based on the prevalence of the allele of a SNP.
  *
  * @author Marc Vaudel
  */
-public class SingleAlleleFeature implements ScoringFeature {
+public class AdditiveFeature implements ScoringFeature {
 
     /**
      * The type of feature.
      */
-    public static final String type = "SingleAlleleFeature";
+    public static final String type = "AdditiveFeature";
     /**
      * The rsId of the snp to test.
      */
@@ -36,7 +35,7 @@ public class SingleAlleleFeature implements ScoringFeature {
      * @param allele The effect allele
      * @param weight The weight this snp confers to the score
      */
-    public SingleAlleleFeature(String rsId, String allele, double weight) {
+    public AdditiveFeature(String rsId, String allele, double weight) {
 
         this.rsId = rsId;
         this.allele = allele;
@@ -45,9 +44,9 @@ public class SingleAlleleFeature implements ScoringFeature {
     }
 
     @Override
-    public double getScoreContribution(String[] alleles) {
+    public double getScoreContribution(List<String>[] alleles) {
 
-        return weight * Arrays.stream(alleles)
+        return weight * alleles[0].stream()
                 .filter(sampleAllele -> sampleAllele.equals(allele))
                 .count();
 

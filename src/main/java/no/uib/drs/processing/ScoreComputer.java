@@ -2,6 +2,8 @@ package no.uib.drs.processing;
 
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.variant.variantcontext.Allele;
+import htsjdk.variant.variantcontext.Genotype;
+import htsjdk.variant.variantcontext.GenotypeType;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 import java.io.File;
@@ -85,7 +87,7 @@ public class ScoreComputer {
                             .map(id -> proxiesMap.containsKey(id) ? proxiesMap.get(id).proxyId : id)
                             .toArray(String[]::new);
 
-                    final List<Allele>[] alleles = new List[variantProxies.length];
+                    final List<Allele>[][] alleles = new List[variantProxies.length][sampleNames.size()];
 
                     for (int i = 0; i < variantProxies.length; i++) {
 
@@ -105,7 +107,13 @@ public class ScoreComputer {
 
                                 if (variantId.equals(id)) {
 
-                                    alleles[i] = variantContext.getAlleles();
+                                    for (int j = 0; j < sampleNames.size(); j++) {
+
+                                        Genotype genotypeType = variantContext.getGenotype(j);
+
+                                        alleles[i][j] = genotypeType.getAlleles();
+
+                                    }
 
                                 }
                             }
@@ -123,7 +131,7 @@ public class ScoreComputer {
                     IntStream.range(0, sampleNames.size())
                             .parallel()
                             .forEach(i -> {
-                                scores[i] = scores[i] + feature.getScoreContribution(getAlleles(feature, alleles, proxiesMap, i));
+                                scores[i] = scores[i] + feature.getScoreContribution(getAlleles(feature, alleles[i], proxiesMap));
                             });
 
                     scoreMutex.release();
@@ -144,25 +152,31 @@ public class ScoreComputer {
      *
      * @return the allele of the original snp for a given sample
      */
-    private String[] getAlleles(ScoringFeature feature, List<Allele>[] alleles, HashMap<String, Proxy> proxiesMap, int i) {
+    private List<String>[] getAlleles(ScoringFeature feature, List<Allele>[] alleles, HashMap<String, Proxy> proxiesMap) {
 
         String[] variants = feature.getVariants();
-        String[] sampleAlleles = new String[variants.length];
+        List<String>[] sampleAlleles = new List[variants.length];
 
         for (int j = 0; j < variants.length; j++) {
 
-            String allele = alleles[j].get(i).getBaseString();
+            List<Allele> variantAlleles = alleles[j];
 
             Proxy proxy = proxiesMap.get(variants[j]);
 
             if (proxy != null) {
 
-                allele = proxy.getProxyAllele(allele);
+                sampleAlleles[j] = variantAlleles.stream()
+                        .map(allele -> allele.getBaseString())
+                        .map(allele -> proxy.getProxyAllele(allele))
+                        .collect(Collectors.toList());
+
+            } else {
+
+                sampleAlleles[j] = variantAlleles.stream()
+                        .map(allele -> allele.getBaseString())
+                        .collect(Collectors.toList());
 
             }
-
-            sampleAlleles[j] = allele;
-
         }
 
         return sampleAlleles;
