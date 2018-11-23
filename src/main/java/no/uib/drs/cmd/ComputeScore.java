@@ -103,7 +103,7 @@ public class ComputeScore {
         String taskName = "1.1 Loading score details";
         progressHandler.start(taskName);
 
-        RiskScore riskScore = getRiskScore(scoreDetailsFile);
+        RiskScore riskScore = RiskScore.parseRiskScore(scoreDetailsFile);
         VariantFeatureMap variantFeatureMap = new VariantFeatureMap(riskScore);
 
         progressHandler.end(taskName);
@@ -179,92 +179,6 @@ public class ComputeScore {
 
         progressHandler.end(mainTaskName);
 
-    }
-    
-    /**
-     * Imports the risk score from a text file.
-     * 
-     * @param variantsTable the score definition as text file
-     * @param scoreName the score name
-     * @param scoreVersion the score version
-     * 
-     * @return the risk score definition
-     */
-    private static RiskScore getRiskScore(File variantsTable) {
-        
-        ArrayList<ScoringFeature> scoringFeatures = new ArrayList<>();
-        String name = null;
-        String version = null;
-        
-        try (SimpleFileReader reader = Utils.getFileReader(variantsTable)) {
-            
-            String line;
-            while ((line = reader.readLine()) != null && line.charAt(0) == '#') {
-                
-                int separator = line.indexOf(":");
-                String key = line.substring(1, separator).trim();
-                
-                if (key.equalsIgnoreCase("name")) {
-                    
-                    name = line.substring(separator + 1).trim();
-                    
-                } else if (key.equalsIgnoreCase("version")) {
-                    
-                    version = line.substring(separator + 1).trim();
-                    
-                }
-            }
-            
-            while ((line = reader.readLine()) != null) {
-            
-            String[] lineSplit = line.split(Utils.separator);
-
-                String rsId = lineSplit[0].trim();
-
-                String locus = lineSplit[1].trim();
-
-                String effectAllele = lineSplit[2].trim();
-
-                String weightString = lineSplit[3].trim();
-                
-                String featureType = lineSplit[4].trim();
-                char featureSingleLetter = featureType.charAt(0);
-                
-                double weight = Double.parseDouble(weightString);
-
-                String[] rsIdSplit = rsId.split(",");
-                List<String>[] alleleSplit = Arrays.stream(effectAllele.split(","))
-                        .map(snpAlleles -> Arrays.asList(snpAlleles.split("\\|")))
-                        .toArray(List[]::new);
-
-                if (featureSingleLetter == AdditiveFeature.getSingleLetterCode()) {
-
-                    scoringFeatures.add(new AdditiveFeature(rsId, locus, effectAllele, weight));
-
-                } else if (featureSingleLetter == HaplotypeFeature.getSingleLetterCode()) {
-
-                    scoringFeatures.add(new HaplotypeFeature(locus, rsIdSplit, alleleSplit, weight));
-
-                } else {
-                    
-                    throw new IllegalArgumentException("Feature code " + featureSingleLetter + " not supported.");
-                    
-                }
-            }
-        }
-        
-        if (name == null) {
-            throw new IllegalArgumentException("Name of the score not found.");
-        }
-        
-        if (version == null) {
-            throw new IllegalArgumentException("Version of the score not found.");
-        }
-        
-        ScoringFeature[] featuresArray = scoringFeatures.stream().toArray(ScoringFeature[]::new);
-        
-        return new RiskScore(name, version, featuresArray);
-        
     }
 
     /**

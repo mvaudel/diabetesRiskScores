@@ -13,6 +13,7 @@ import static no.uib.drs.io.Utils.getFileReader;
 import static no.uib.drs.io.Utils.lineSeparator;
 import no.uib.drs.io.flat.SimpleFileReader;
 import no.uib.drs.io.flat.SimpleGzWriter;
+import no.uib.drs.io.vcf.VariantDetailsProvider;
 import no.uib.drs.io.vcf.VcfSettings;
 import no.uib.drs.utils.ProgressHandler;
 import org.apache.commons.cli.CommandLine;
@@ -149,7 +150,8 @@ public class InfoFile {
 
             try (SimpleGzWriter writer = new SimpleGzWriter(destinationFile)) {
 
-                writer.writeLine("# " + vcfFile.getName());
+                writer.writeLine("# Vcf: " + vcfFile.getName());
+                writer.writeLine("# Version: " + VariantDetailsProvider.version);
 
                 writer.writeLine("CHR", "BP", "ID", "REF", "ALT", "MAF", "TYPED", "SCORE");
 
