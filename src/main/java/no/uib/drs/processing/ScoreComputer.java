@@ -80,14 +80,13 @@ public class ScoreComputer {
         final SimpleSemaphore scoreMutex = new SimpleSemaphore(1);
 
         Arrays.stream(riskScore.features)
-                .parallel()
                 .forEach(feature -> {
 
                     final String[] variantProxies = Arrays.stream(feature.getVariants())
                             .map(id -> proxiesMap.containsKey(id) ? proxiesMap.get(id).proxyId : id)
                             .toArray(String[]::new);
 
-                    final List<Allele>[][] alleles = new List[variantProxies.length][sampleNames.size()];
+                    final List<Allele>[][] alleles = new List[sampleNames.size()][variantProxies.length];
 
                     for (int i = 0; i < variantProxies.length; i++) {
 
@@ -106,15 +105,16 @@ public class ScoreComputer {
                                 String variantId = variantContext.getID();
 
                                 if (variantId.equals(id)) {
+                                    
+                                    found = true;
 
                                     for (int j = 0; j < sampleNames.size(); j++) {
 
                                         Genotype genotypeType = variantContext.getGenotype(j);
 
-                                        alleles[i][j] = genotypeType.getAlleles();
+                                        alleles[j][i] = genotypeType.getAlleles();
 
                                     }
-
                                 }
                             }
                         }

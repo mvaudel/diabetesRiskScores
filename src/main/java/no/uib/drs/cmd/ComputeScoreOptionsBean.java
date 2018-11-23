@@ -94,6 +94,8 @@ public class ComputeScoreOptionsBean {
         
         // Variant details files
 
+        filePath = aLine.getOptionValue(ComputeScoreOptions.variants.opt);
+
         variantDetailsFiles = Arrays.stream(filePath.split(","))
                 .map(path -> new File(path))
                 .toArray(File[]::new);

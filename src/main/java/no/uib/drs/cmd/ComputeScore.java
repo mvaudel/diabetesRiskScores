@@ -5,21 +5,15 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.stream.IntStream;
 import no.uib.drs.DiabetesRiskScore;
-import no.uib.drs.io.Utils;
 import static no.uib.drs.io.Utils.getVcfIndexFile;
 import static no.uib.drs.io.Utils.lineSeparator;
-import no.uib.drs.io.flat.SimpleFileReader;
 import no.uib.drs.io.flat.SimpleGzWriter;
 import no.uib.drs.io.vcf.GenotypeProvider;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
-import no.uib.drs.model.ScoringFeature;
 import no.uib.drs.model.biology.Proxy;
 import no.uib.drs.model.biology.Variant;
-import no.uib.drs.model.features.AdditiveFeature;
-import no.uib.drs.model.features.HaplotypeFeature;
 import no.uib.drs.model.score.RiskScore;
 import no.uib.drs.model.score.VariantFeatureMap;
 import no.uib.drs.processing.ScoreComputer;
@@ -42,11 +36,12 @@ public class ComputeScore {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        
+
         args = new String[]{
-            "-s", "C:\\Github\\diabetesRiskScores\\resources\\scores\\Oram_T1D-GRS.txt",
-            "-g", "C:\\data\\partnersGrs.vcf.gz"
-        };
+            "-s", "C:\\Github\\diabetesRiskScores\\resources\\scores\\GRS_test.txt",
+            "-g", "C:\\data\\partnersGrs.vcf.gz",
+            "-i", "C:\\data\\partnersGrs.info.gz",
+            "-o", "C:\\data\\partnersGrs.scores.gz"};
 
         if (args.length == 0
                 || args.length == 1 && args[0].equals("-h")
@@ -132,21 +127,21 @@ public class ComputeScore {
 
         for (String id : variantFeatureMap.variantIds) {
 
-            String proxyId = proxiesMap.get(id).proxyId;
+            Proxy proxy = proxiesMap.get(id);
 
-            String usedId = proxyId == null ? id : proxyId;
+            String usedId = proxy == null ? id : proxy.proxyId;
 
-            if (variantDetailsProvider.getVariant(id) == null) {
+            if (variantDetailsProvider.getVariant(usedId) == null) {
                 throw new IllegalArgumentException("Variant " + usedId + " not found in the variant information file(s).");
             }
 
             Variant variant = variantDetailsProvider.getVariant(usedId);
 
             if (!variant.genotyped && !Double.isNaN(scoreThreshld) && variant.imputationScore < scoreThreshld) {
-                if (proxyId == null) {
+                if (proxy == null) {
                     throw new IllegalArgumentException("Variant " + usedId + " does not pass the imputation score threshold.");
                 } else {
-                    throw new IllegalArgumentException("Variant " + usedId + " proxy of " + id + " does not pass the imputation score threshold.");
+                    throw new IllegalArgumentException("Variant " + proxy.proxyId + " proxy of " + id + " does not pass the imputation score threshold.");
                 }
             }
         }

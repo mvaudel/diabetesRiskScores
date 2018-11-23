@@ -4,9 +4,9 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.stream.Collectors;
-import no.uib.drs.cmd.InfoFile;
 import static no.uib.drs.io.Utils.getFileReader;
 import no.uib.drs.io.flat.SimpleFileReader;
+import no.uib.drs.io.flat.SimpleGzWriter;
 import no.uib.drs.model.biology.Variant;
 import no.uib.drs.utils.SimpleSemaphore;
 
@@ -18,10 +18,6 @@ import no.uib.drs.utils.SimpleSemaphore;
  */
 public class VariantDetailsProvider {
 
-    /**
-     * Column separator.
-     */
-    public static final char separator = '\t';
     /**
      * The version of the info file format.
      */
@@ -95,110 +91,49 @@ public class VariantDetailsProvider {
                 }
             }
 
-        if (vcfName == null) {
-            throw new IllegalArgumentException("Name of the vcf file not found.");
-        }
+            if (vcfName == null) {
+                throw new IllegalArgumentException("Name of the vcf file not found.");
+            }
 
-        if (version == null) {
-            throw new IllegalArgumentException("Version of the info file not found.");
-        }
-        
-        if (!version.equals(this.version)) {
-            throw new IllegalArgumentException("Version of the info file (" + version + ") not compatible with this version of the tool (" + this.version + ").");
-        }
-            
+            if (version == null) {
+                throw new IllegalArgumentException("Version of the info file not found.");
+            }
+
+            if (!version.equals(this.version)) {
+                throw new IllegalArgumentException("Version of the info file (" + version + ") not compatible with this version of the tool (" + this.version + ").");
+            }
+
             while ((line = reader.readLine()) != null && !allFound) {
 
-                char[] lineChars = line.toCharArray();
+                String[] lineSplit = line.split(SimpleGzWriter.separator);
 
-                int nSeparators = 0,
-                        lastSeparator = -1;
+                String chr = lineSplit[0];
+                int bp = Integer.parseInt(lineSplit[1]);
+                String id = lineSplit[2];
+                String ref = lineSplit[3];
+                String alt = lineSplit[4];
+                double maf = Double.parseDouble(lineSplit[5]);
+                boolean typed = lineSplit[6].equals("1");
+                double score = Double.parseDouble(lineSplit[7]);
 
-                String id = null;
-                String chr = null;
-                int bp = -1;
-                String ref = null;
-                String alt = null;
-                boolean typed = false;
-                double score = -1.0;
-                double maf;
+                Variant variant = new Variant(id, chr, bp, ref, alt, maf, typed, score);
 
-                OUTER:
-                for (int i = 0; i < lineChars.length; i++) {
+                mutex.acquire();
 
-                    if (lineChars[i] == separator) {
+                variantDetailsMap.put(id, variant);
+                variantFileMap.put(id, vcfName);
 
-                        nSeparators++;
-                        
-                        String input = new String(lineChars, lastSeparator + 1, i - lastSeparator - 1);
+                if (snpFound != null) {
 
-                        switch (nSeparators) {
+                    snpFound.put(id, true);
 
-                            case 1:
-                                chr = input;
-                                break;
-
-                            case 2:
-                                bp = Integer.parseInt(input);
-                                break;
-
-                            case 3:
-                                id = input;
-
-                                if (snpFound != null && !snpFound.containsKey(id)) {
-                                    break OUTER;
-                                }
-
-                                break;
-
-                            case 4:
-                                ref = input;
-                                break;
-
-                            case 5:
-                                alt = input;
-                                break;
-
-                            case 6:
-                                typed = input.equals("1");
-                                break;
-
-                            case 7:
-                                score = Double.parseDouble(input);
-                                break;
-
-                            default:
-
-                        }
-
-                        lastSeparator = i;
-
-                    }
-                }
-
-                if (nSeparators == 5) {
-
-                    maf = Double.parseDouble(new String(lineChars, lastSeparator + 1, lineChars.length - lastSeparator - 1));
-
-                    Variant variant = new Variant(id, chr, bp, ref, alt, maf, typed, score);
-
-                    mutex.acquire();
-
-                    variantDetailsMap.put(id, variant);
-                    variantFileMap.put(id, vcfName);
-
-                    if (snpFound != null) {
-
-                        snpFound.put(id, true);
-
-                        allFound = snpFound.values().stream()
-                                .allMatch(a -> a);
-
-                    }
-
-                    mutex.release();
+                    allFound = snpFound.values().stream()
+                            .allMatch(a -> a);
 
                 }
+
+                mutex.release();
+
             }
         }
     }
