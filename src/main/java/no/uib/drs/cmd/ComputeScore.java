@@ -5,16 +5,21 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.stream.IntStream;
 import no.uib.drs.DiabetesRiskScore;
+import no.uib.drs.io.Utils;
 import static no.uib.drs.io.Utils.getVcfIndexFile;
 import static no.uib.drs.io.Utils.lineSeparator;
+import no.uib.drs.io.flat.SimpleFileReader;
 import no.uib.drs.io.flat.SimpleGzWriter;
-import no.uib.drs.io.json.SimpleObjectMapper;
 import no.uib.drs.io.vcf.GenotypeProvider;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
+import no.uib.drs.model.ScoringFeature;
 import no.uib.drs.model.biology.Proxy;
 import no.uib.drs.model.biology.Variant;
+import no.uib.drs.model.features.AdditiveFeature;
+import no.uib.drs.model.features.HaplotypeFeature;
 import no.uib.drs.model.score.RiskScore;
 import no.uib.drs.model.score.VariantFeatureMap;
 import no.uib.drs.processing.ScoreComputer;
@@ -37,6 +42,11 @@ public class ComputeScore {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        
+        args = new String[]{
+            "-s", "C:\\Github\\diabetesRiskScores\\resources\\scores\\Oram_T1D-GRS.txt",
+            "-g", "C:\\data\\partnersGrs.vcf.gz"
+        };
 
         if (args.length == 0
                 || args.length == 1 && args[0].equals("-h")
@@ -93,7 +103,7 @@ public class ComputeScore {
         String taskName = "1.1 Loading score details";
         progressHandler.start(taskName);
 
-        RiskScore riskScore = SimpleObjectMapper.read(scoreDetailsFile, RiskScore.class);
+        RiskScore riskScore = getRiskScore(scoreDetailsFile);
         VariantFeatureMap variantFeatureMap = new VariantFeatureMap(riskScore);
 
         progressHandler.end(taskName);
@@ -169,6 +179,92 @@ public class ComputeScore {
 
         progressHandler.end(mainTaskName);
 
+    }
+    
+    /**
+     * Imports the risk score from a text file.
+     * 
+     * @param variantsTable the score definition as text file
+     * @param scoreName the score name
+     * @param scoreVersion the score version
+     * 
+     * @return the risk score definition
+     */
+    private static RiskScore getRiskScore(File variantsTable) {
+        
+        ArrayList<ScoringFeature> scoringFeatures = new ArrayList<>();
+        String name = null;
+        String version = null;
+        
+        try (SimpleFileReader reader = Utils.getFileReader(variantsTable)) {
+            
+            String line;
+            while ((line = reader.readLine()) != null && line.charAt(0) == '#') {
+                
+                int separator = line.indexOf(":");
+                String key = line.substring(1, separator).trim();
+                
+                if (key.equalsIgnoreCase("name")) {
+                    
+                    name = line.substring(separator + 1).trim();
+                    
+                } else if (key.equalsIgnoreCase("version")) {
+                    
+                    version = line.substring(separator + 1).trim();
+                    
+                }
+            }
+            
+            while ((line = reader.readLine()) != null) {
+            
+            String[] lineSplit = line.split(Utils.separator);
+
+                String rsId = lineSplit[0].trim();
+
+                String locus = lineSplit[1].trim();
+
+                String effectAllele = lineSplit[2].trim();
+
+                String weightString = lineSplit[3].trim();
+                
+                String featureType = lineSplit[4].trim();
+                char featureSingleLetter = featureType.charAt(0);
+                
+                double weight = Double.parseDouble(weightString);
+
+                String[] rsIdSplit = rsId.split(",");
+                List<String>[] alleleSplit = Arrays.stream(effectAllele.split(","))
+                        .map(snpAlleles -> Arrays.asList(snpAlleles.split("\\|")))
+                        .toArray(List[]::new);
+
+                if (featureSingleLetter == AdditiveFeature.getSingleLetterCode()) {
+
+                    scoringFeatures.add(new AdditiveFeature(rsId, locus, effectAllele, weight));
+
+                } else if (featureSingleLetter == HaplotypeFeature.getSingleLetterCode()) {
+
+                    scoringFeatures.add(new HaplotypeFeature(locus, rsIdSplit, alleleSplit, weight));
+
+                } else {
+                    
+                    throw new IllegalArgumentException("Feature code " + featureSingleLetter + " not supported.");
+                    
+                }
+            }
+        }
+        
+        if (name == null) {
+            throw new IllegalArgumentException("Name of the score not found.");
+        }
+        
+        if (version == null) {
+            throw new IllegalArgumentException("Version of the score not found.");
+        }
+        
+        ScoringFeature[] featuresArray = scoringFeatures.stream().toArray(ScoringFeature[]::new);
+        
+        return new RiskScore(name, version, featuresArray);
+        
     }
 
     /**

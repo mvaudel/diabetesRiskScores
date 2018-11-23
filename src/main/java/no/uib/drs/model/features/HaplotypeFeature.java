@@ -1,9 +1,7 @@
 package no.uib.drs.model.features;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -124,9 +122,13 @@ public class HaplotypeFeature implements ScoringFeature {
     public String getType() {
         return type;
     }
-
-    @Override
-    public int nPossibilities() {
-        return 2;
+    
+    /**
+     * Returns the single letter code for this feature.
+     * 
+     * @return 
+     */
+    public static char getSingleLetterCode() {
+        return 'H';
     }
 }

@@ -41,9 +41,5 @@ public interface ScoringFeature {
      * @return the type of feature
      */
     public String getType();
-    /**
-     * Returns the number of possibilities;
-     */
-    public int nPossibilities();
     
 }

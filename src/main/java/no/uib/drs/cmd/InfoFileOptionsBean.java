@@ -75,17 +75,20 @@ public class InfoFileOptionsBean {
         
         // vcf 
         
-        String typedFlag = aLine.getOptionValue(InfoFileOptions.typed.opt);
-        String filterString = aLine.getOptionValue(InfoFileOptions.filter.opt);
-        String scoreFlag = aLine.getOptionValue(InfoFileOptions.score.opt);
+        String typedFlag = aLine.hasOption(InfoFileOptions.typed.opt) ? 
+                aLine.getOptionValue(InfoFileOptions.typed.opt) : null;
+        String filterString = aLine.hasOption(InfoFileOptions.filter.opt) ? 
+                aLine.getOptionValue(InfoFileOptions.filter.opt) : null;
+        String scoreFlag = aLine.hasOption(InfoFileOptions.score.opt) ? 
+                aLine.getOptionValue(InfoFileOptions.score.opt) : null;
                 
-        if (!filterString.equals("0") && !filterString.equals("1")) {
+        if (filterString != null && !filterString.equals("0") && !filterString.equals("1")) {
 
             throw new IllegalArgumentException("Input for filter not recognized. Supported input: 0, 1.");
             
         }
         
-        vcfSettings = new VcfSettings(typedFlag, filterString.equals("1"), scoreFlag);
+        vcfSettings = new VcfSettings(typedFlag, filterString != null && filterString.equals("1"), scoreFlag);
         
         
         // Variants file

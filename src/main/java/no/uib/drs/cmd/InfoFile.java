@@ -34,6 +34,10 @@ public class InfoFile {
      */
     public static void main(String[] args) {
 
+        args = new String[]{
+            "-g", "C:\\data\\partnersGrs.vcf.gz",
+            "-o", "C:\\data\\partnersGrs.info"};
+
         if (args.length == 0
                 || args.length == 1 && args[0].equals("-h")
                 || args.length == 1 && args[0].equals("--help")) {
@@ -144,7 +148,7 @@ public class InfoFile {
         try (VCFFileReader vcfFileReader = new VCFFileReader(vcfFile)) {
 
             try (SimpleGzWriter writer = new SimpleGzWriter(destinationFile)) {
-                
+
                 writer.writeLine("# " + vcfFile.getName());
 
                 writer.writeLine("CHR", "BP", "ID", "REF", "ALT", "MAF", "TYPED", "SCORE");
@@ -161,11 +165,15 @@ public class InfoFile {
                             String contig = variantContext.getContig();
                             int start = variantContext.getStart();
                             String ref = variantContext.getReference().getBaseString();
-                            
-                            boolean typed = vcfSettings.typedFilter && variantContext.getFilters().contains(vcfSettings.typedFlag)
-                                    || !vcfSettings.typedFilter && (boolean) variantContext.getAttribute(vcfSettings.typedFlag);
-                            
-                            double score = (double) variantContext.getAttribute(vcfSettings.scoreFlag);
+
+                            String typed = vcfSettings.typedFlag == null ? "NA"
+                                    : vcfSettings.typedFilter && variantContext.getFilters().contains(vcfSettings.typedFlag)
+                                    || !vcfSettings.typedFilter && (boolean) variantContext.getAttribute(vcfSettings.typedFlag)
+                                    ? "1" : "0";
+
+                            double score = vcfSettings.scoreFlag == null
+                                    ? Double.NaN
+                                    : (double) variantContext.getAttribute(vcfSettings.scoreFlag);
 
                             List<Allele> altAlleles = variantContext.getAlternateAlleles();
 
@@ -194,7 +202,7 @@ public class InfoFile {
                                             ref,
                                             alt,
                                             Double.toString(maf),
-                                            typed ? "1" : "0",
+                                            typed,
                                             Double.toString(score)
                                     );
 

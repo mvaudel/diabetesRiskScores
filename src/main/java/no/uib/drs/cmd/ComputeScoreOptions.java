@@ -11,7 +11,7 @@ import org.apache.commons.cli.Options;
  */
 public enum ComputeScoreOptions {
 
-    score("s", "score", "The score details as json file.", true, true),
+    score("s", "score", "The score details file.", true, true),
     vcf("g", "geno", "The genotype files in vcf format as comma separated list.", true, true),
     variants("i", "info", "Information file on the variants needed for the score and proxies.", true, true),
     out("o", "out", "File where to write the scores.", true, true),

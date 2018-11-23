@@ -18,26 +18,32 @@ public class AdditiveFeature implements ScoringFeature {
     /**
      * The rsId of the snp to test.
      */
-    private String rsId;
+    private final String rsId;
+    /**
+     * The name of the locus associated to this variant.
+     */
+    private final String name;
     /**
      * The effect allele.
      */
-    private String allele;
+    private final String allele;
     /**
      * The weight this snp confers to the score.
      */
-    private double weight;
+    private final double weight;
 
     /**
      * Constructor.
      *
      * @param rsId The rsId of the snp to test
      * @param allele The effect allele
+     * @param name The name of the locus associated to this variant
      * @param weight The weight this snp confers to the score
      */
-    public AdditiveFeature(String rsId, String allele, double weight) {
+    public AdditiveFeature(String rsId, String name, String allele, double weight) {
 
         this.rsId = rsId;
+        this.name = name;
         this.allele = allele;
         this.weight = weight;
 
@@ -71,9 +77,13 @@ public class AdditiveFeature implements ScoringFeature {
     public String getType() {
         return type;
     }
-
-    @Override
-    public int nPossibilities() {
-        return 3;
+    
+    /**
+     * Returns the single letter code for this feature.
+     * 
+     * @return 
+     */
+    public static char getSingleLetterCode() {
+        return 'A';
     }
 }
