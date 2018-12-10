@@ -14,10 +14,10 @@ repo=/mnt/work/marc/grs/diabetesRiskScores
 plinkFolder=/mnt/work/marc/tools/plink1.90b3.36
 
 # Directory with the plink files
-directory=/mnt/archive/marc/partners/grs/josep
+directory=/mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/plink
 
 # destination stem
-destinationStem=/mnt/archive/marc/partners/grs/merged/partnersGrs
+destinationStem=/mnt/archive/marc/partners/grs/mgh/diabetesGrs
 
 
 ## Script
