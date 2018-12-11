@@ -8,5 +8,5 @@ java -cp bin/drs-0.0.1/drs-0.0.1.jar no.uib.drs.marc.InfoJosep
 java -cp bin/drs-0.0.1/drs-0.0.1.jar no.uib.drs.cmd.InfoFile 
 
 # Score
-java -cp bin/drs-0.0.1/drs-0.0.1.jar no.uib.drs.cmd.ComputeScore -s /mnt/work/marc/grs/diabetesRiskScores/Oram_T1D-GRS.txt -g /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/diabetesGrs.vcf.gz -i /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/diabetesGrs.info.gz -o /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/updated_with_21Kdataset_Oram_T1D-GRS.gz
+java -cp bin/drs-0.0.1/drs-0.0.1.jar no.uib.drs.cmd.ComputeScore -s /mnt/work/marc/grs/diabetesRiskScores/resources/scores/Oram_T1D-GRS.txt -g /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/diabetesGrs.vcf.gz -i /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/diabetesGrs.info.gz -o /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/scores/updated_with_21Kdataset_Oram_T1D-GRS.gz
 
