@@ -95,6 +95,12 @@ public class InfoJosep {
                             double maf = nAlt / nAll;
 
                             String positionalId = getPositionalId(contig, start, ref, alt);
+                            
+                            if (positionalId == null) {
+                                
+                                throw new IllegalArgumentException("Missing variant in table: " + positionalId + " " + variantId + ".");
+                                
+                            }
 
                             boolean typed = typedMap.get(positionalId);
                             double score = scoreMap.get(positionalId);

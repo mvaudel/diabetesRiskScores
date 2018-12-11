@@ -1,5 +1,8 @@
 # Test
 java -cp release/drs-0.0.1/drs-0.0.1.jar no.uib.drs.cmd.Test
 
+# Format file from Josep
+java -cp release/drs-0.0.1/drs-0.0.1.jar no.uib.drs.marc.InfoJosep
+
 # Info
 java -cp release/drs-0.0.1/drs-0.0.1.jar no.uib.drs.cmd.InfoFile 
