@@ -37,12 +37,6 @@ public class ComputeScore {
      */
     public static void main(String[] args) {
 
-        args = new String[]{
-            "-s", "C:\\Github\\diabetesRiskScores\\resources\\scores\\GRS_test.txt",
-            "-g", "C:\\data\\partnersGrs.vcf.gz",
-            "-i", "C:\\data\\partnersGrs.info.gz",
-            "-o", "C:\\data\\partnersGrs.scores.gz"};
-
         if (args.length == 0
                 || args.length == 1 && args[0].equals("-h")
                 || args.length == 1 && args[0].equals("--help")) {
