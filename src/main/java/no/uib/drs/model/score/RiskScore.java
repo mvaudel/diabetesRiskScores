@@ -49,8 +49,6 @@ public class RiskScore {
      * Imports the risk score from a text file.
      *
      * @param variantsTable the score definition as text file
-     * @param scoreName the score name
-     * @param scoreVersion the score version
      *
      * @return the risk score definition
      */

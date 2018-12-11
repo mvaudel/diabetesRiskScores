@@ -47,4 +47,9 @@ $plinkFolder/plink \
         --recode vcf \
         --out $destinationStem
 
+# bgzip & tabix
+bgzip -c $destinationStem.vcf > $destinationStem.vcf.gz
+tabix -p vcf $destinationStem.vcf.gz
+
+
 

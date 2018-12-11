@@ -35,10 +35,6 @@ public class InfoFile {
      */
     public static void main(String[] args) {
 
-        args = new String[]{
-            "-g", "C:\\data\\partnersGrs.vcf.gz",
-            "-o", "C:\\data\\partnersGrs.info.gz"};
-
         if (args.length == 0
                 || args.length == 1 && args[0].equals("-h")
                 || args.length == 1 && args[0].equals("--help")) {
