@@ -98,6 +98,12 @@ public class InfoJosep {
                             
                             if (!typedMap.containsKey(positionalId) || !scoreMap.containsKey(positionalId)) {
                                 
+                                positionalId = getPositionalId(contig, start, alt, ref);
+                                
+                            }
+                            
+                            if (!typedMap.containsKey(positionalId) || !scoreMap.containsKey(positionalId)) {
+                                
                                 throw new IllegalArgumentException("Missing variant in table: " + positionalId + " " + variantId + ".");
                                 
                             }
