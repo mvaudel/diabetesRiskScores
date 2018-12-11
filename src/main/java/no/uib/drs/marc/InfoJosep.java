@@ -96,7 +96,7 @@ public class InfoJosep {
 
                             String positionalId = getPositionalId(contig, start, ref, alt);
                             
-                            if (positionalId == null) {
+                            if (!typedMap.containsKey(positionalId) || !scoreMap.containsKey(positionalId)) {
                                 
                                 throw new IllegalArgumentException("Missing variant in table: " + positionalId + " " + variantId + ".");
                                 
