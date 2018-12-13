@@ -13,7 +13,7 @@ import no.uib.drs.io.flat.SimpleGzWriter;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
 
 /**
- * Formats the file from Josep.
+ * Formats the info file from Josep.
  *
  * @author Marc Vaudel
  */

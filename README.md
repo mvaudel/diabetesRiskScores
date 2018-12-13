@@ -7,6 +7,10 @@ This repository proposes a set of resources for the computation and interpretati
 
 *See our [Wiki](https://github.com/mvaudel/diabetesRiskScores/wiki) for more information.*
 
+## Contribution
+
+Feedback, suggestions of improvement, pull requests, and bug reports are most welcome. Please use the [issue tracker](https://github.com/mvaudel/diabetesRiskScores/issues).
+
 ## Licence
 [![GitHub license](https://img.shields.io/eclipse-marketplace/l/notepad4e.svg)](https://github.com/mvaudel/diabetesRiskScores/blob/master/LICENSE)
 

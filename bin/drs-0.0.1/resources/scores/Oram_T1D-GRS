@@ -1,6 +1,6 @@
 # Name: Oram_T1D
 # Version: 23.11.18
-SNP	Locus	Effect Allele	Weight	Type
+SNP	Name	Effect Allele	Weight	Type
 rs2187668,rs7454108	DR3/DR4-DQ8	T|C,C|T	3.87	H
 rs2187668,rs7454108	DR3/DR3	T|T,T|T	3.05	H
 rs2187668,rs7454108	DR4-DQ8/DR4-DQ8	C|C,C|C	3.09	H
