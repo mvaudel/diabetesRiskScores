@@ -26,6 +26,10 @@ public class RiskScore {
      */
     public final String version;
     /**
+     * The pubmed id of the publication of the score.
+     */
+    public final String pmid;
+    /**
      * The markers to use for scoring.
      */
     public final ScoringFeature[] features;
@@ -35,12 +39,14 @@ public class RiskScore {
      *
      * @param name The name of the risk score
      * @param version The version of the risk score
+     * @param pmid The pubmed id of the publication of the score
      * @param features The features to use for scoring
      */
-    public RiskScore(String name, String version, ScoringFeature[] features) {
+    public RiskScore(String name, String version, String pmid, ScoringFeature[] features) {
 
         this.name = name;
         this.version = version;
+        this.pmid = pmid;
         this.features = features;
 
     }
@@ -57,25 +63,40 @@ public class RiskScore {
         ArrayList<ScoringFeature> scoringFeatures = new ArrayList<>();
         String name = null;
         String version = null;
+        String pmid = null;
 
         try (SimpleFileReader reader = Utils.getFileReader(variantsTable)) {
+
+            int i = 0;
 
             String line;
             while ((line = reader.readLine()) != null && line.charAt(0) == '#') {
 
+                i++;
+
                 int separator = line.indexOf(":");
-                String key = line.substring(1, separator).trim();
 
-                if (key.equalsIgnoreCase("name")) {
+                if (separator > 1) {
 
-                    name = line.substring(separator + 1).trim();
+                    String key = line.substring(1, separator).trim();
 
-                } else if (key.equalsIgnoreCase("version")) {
+                    if (key.equalsIgnoreCase("name")) {
 
-                    version = line.substring(separator + 1).trim();
+                        name = line.substring(separator + 1).trim();
 
+                    } else if (key.equalsIgnoreCase("PMID")) {
+
+                        pmid = line.substring(separator + 1).trim();
+
+                    } else if (key.equalsIgnoreCase("version")) {
+
+                        version = line.substring(separator + 1).trim();
+
+                    }
                 }
             }
+
+            i++;
 
             if (name == null) {
                 throw new IllegalArgumentException("Name of the score not found.");
@@ -85,47 +106,64 @@ public class RiskScore {
                 throw new IllegalArgumentException("Version of the score not found.");
             }
 
+            if (pmid == null) {
+                throw new IllegalArgumentException("PMID of the score not found.");
+            }
+
             while ((line = reader.readLine()) != null) {
 
-                String[] lineSplit = line.split(Utils.separator);
+                i++;
 
-                String rsId = lineSplit[0].trim();
+                try {
 
-                String locus = lineSplit[1].trim();
+                    line = line.trim();
 
-                String effectAllele = lineSplit[2].trim();
+                    if (!line.equals("") && line.charAt(0) != '#') {
 
-                String weightString = lineSplit[3].trim();
+                        String[] lineSplit = line.split(Utils.separator);
 
-                String featureType = lineSplit[4].trim();
-                char featureSingleLetter = featureType.charAt(0);
+                        String rsId = lineSplit[0].trim();
 
-                double weight = Double.parseDouble(weightString);
+                        String locus = lineSplit[1].trim();
 
-                String[] rsIdSplit = rsId.split(",");
-                List<String>[] alleleSplit = Arrays.stream(effectAllele.split(","))
-                        .map(snpAlleles -> Arrays.asList(snpAlleles.split("\\|")))
-                        .toArray(List[]::new);
+                        String effectAllele = lineSplit[2].trim();
 
-                if (featureSingleLetter == AdditiveFeature.getSingleLetterCode()) {
+                        String weightString = lineSplit[3].trim();
 
-                    scoringFeatures.add(new AdditiveFeature(rsId, locus, effectAllele, weight));
+                        String featureType = lineSplit[4].trim();
+                        char featureSingleLetter = featureType.charAt(0);
 
-                } else if (featureSingleLetter == HaplotypeFeature.getSingleLetterCode()) {
+                        double weight = Double.parseDouble(weightString);
 
-                    scoringFeatures.add(new HaplotypeFeature(locus, rsIdSplit, alleleSplit, weight));
+                        String[] rsIdSplit = rsId.split(",");
+                        List<String>[] alleleSplit = Arrays.stream(effectAllele.split(","))
+                                .map(snpAlleles -> Arrays.asList(snpAlleles.split("\\|")))
+                                .toArray(List[]::new);
 
-                } else {
+                        if (featureSingleLetter == AdditiveFeature.getSingleLetterCode()) {
 
-                    throw new IllegalArgumentException("Feature code " + featureSingleLetter + " not supported.");
+                            scoringFeatures.add(new AdditiveFeature(rsId, locus, effectAllele, weight));
 
+                        } else if (featureSingleLetter == HaplotypeFeature.getSingleLetterCode()) {
+
+                            scoringFeatures.add(new HaplotypeFeature(locus, rsIdSplit, alleleSplit, weight));
+
+                        } else {
+
+                            throw new IllegalArgumentException("Feature code " + featureSingleLetter + " not supported.");
+
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("An error occurred while pasing line " + i + " in score " + variantsTable.getName() + ".");
+                    throw (e);
                 }
             }
         }
 
         ScoringFeature[] featuresArray = scoringFeatures.stream().toArray(ScoringFeature[]::new);
 
-        return new RiskScore(name, version, featuresArray);
+        return new RiskScore(name, version, pmid, featuresArray);
 
     }
 

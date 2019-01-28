@@ -1,12 +1,8 @@
 package no.uib.drs.marc;
 
-import htsjdk.samtools.util.CloseableIterator;
-import htsjdk.variant.variantcontext.Allele;
-import htsjdk.variant.variantcontext.VariantContext;
-import htsjdk.variant.vcf.VCFFileReader;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import no.uib.drs.model.ScoringFeature;
+import no.uib.drs.model.score.RiskScore;
 
 /**
  *
@@ -21,24 +17,15 @@ public class Test {
      */
     public static void main(String[] args) {
 
-        int cpt = 0;
-
-        try (VCFFileReader reader = new VCFFileReader(new File("C:\\data\\partnersGrs.vcf.gz"))) {
+        File scoreFile = new File("resources/scores/T1D-GRS2");
         
-        ArrayList<String> samples = reader.getFileHeader().getSampleNamesInOrder();
-
-            try (CloseableIterator<VariantContext> iterator = reader.iterator()) {
-
-                while (iterator.hasNext()) {
-
-                    VariantContext variantContext = iterator.next();
-                    
-                    List<Allele> alleles = variantContext.getAlleles();
-                        
-                    System.out.println("Info " + variantContext.getID());
-                    System.out.println(alleles.size());
-                }
-            }
+        RiskScore riskScore = RiskScore.parseRiskScore(scoreFile);
+        
+        for (ScoringFeature feature : riskScore.features) {
+            
+            double test = feature.getWeight();
+            
         }
+        
     }
 }

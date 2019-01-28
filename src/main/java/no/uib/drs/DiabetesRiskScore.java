@@ -18,7 +18,7 @@ public class DiabetesRiskScore {
     /**
      * Retrieves the version number set in the pom file.
      *
-     * @return the version number of PeptideShaker
+     * @return the version number
      */
     public static String getVersion() {
 
