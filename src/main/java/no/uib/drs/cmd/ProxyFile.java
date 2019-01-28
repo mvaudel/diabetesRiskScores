@@ -14,7 +14,7 @@ import no.uib.drs.DiabetesRiskScore;
 import static no.uib.drs.io.Utils.getFileReader;
 import static no.uib.drs.io.Utils.lineSeparator;
 import no.uib.drs.io.flat.SimpleFileReader;
-import no.uib.drs.io.flat.SimpleGzWriter;
+import no.uib.drs.io.flat.SimpleFileWriter;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
 import no.uib.drs.model.biology.Variant;
 import no.uib.drs.utils.ProgressHandler;
@@ -134,7 +134,7 @@ public class ProxyFile {
      */
     private static void exportProxies(TreeMap<String, String> proxies, File destinationFile) {
 
-        try (SimpleGzWriter writer = new SimpleGzWriter(destinationFile)) {
+        try (SimpleFileWriter writer = new SimpleFileWriter(destinationFile, true)) {
 
             writer.writeLine("ID", "proxy");
 

@@ -1,6 +1,5 @@
 package no.uib.drs.model.features;
 
-import java.util.Arrays;
 import java.util.List;
 import no.uib.drs.model.ScoringFeature;
 
@@ -70,7 +69,7 @@ public class AdditiveFeature implements ScoringFeature {
 
     @Override
     public String getName() {
-        return rsId;
+        return name;
     }
 
     @Override

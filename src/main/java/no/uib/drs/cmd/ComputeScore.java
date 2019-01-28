@@ -9,7 +9,7 @@ import java.util.stream.IntStream;
 import no.uib.drs.DiabetesRiskScore;
 import static no.uib.drs.io.Utils.getVcfIndexFile;
 import static no.uib.drs.io.Utils.lineSeparator;
-import no.uib.drs.io.flat.SimpleGzWriter;
+import no.uib.drs.io.flat.SimpleFileWriter;
 import no.uib.drs.io.vcf.GenotypeProvider;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
 import no.uib.drs.model.biology.Proxy;
@@ -179,7 +179,7 @@ public class ComputeScore {
      */
     private static void exportResults(File destinationFile, ArrayList<String> sampleNames, double[] scores) {
 
-        try (SimpleGzWriter writer = new SimpleGzWriter(destinationFile)) {
+        try (SimpleFileWriter writer = new SimpleFileWriter(destinationFile, true)) {
 
             writer.writeLine("Sample", "Score");
 

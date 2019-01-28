@@ -9,12 +9,10 @@ import org.apache.commons.cli.Options;
  *
  * @author Marc Vaudel
  */
-public enum ProxyFileOptions {
+public enum ListMarkersOptions {
 
     score("s", "score", "The score details file.", true, true),
-    variants("i", "info", "Information file on the variants needed for the score and proxies.", true, true),
-    out("o", "out", "File where to write the proxy mapping.", true, true),
-    proxies("p", "proxies", "Proxies files (snpId.snp) or parent folder.", true, true);
+    out("o", "out", "File where to write the proxy mapping.", true, true);
 
     /**
      * The short option.
@@ -47,7 +45,7 @@ public enum ProxyFileOptions {
      * @param mandatory is the option mandatory
      * @param hasArg has the option an argument
      */
-    private ProxyFileOptions(String opt, String longOpt, String description, boolean mandatory, boolean hasArg) {
+    private ListMarkersOptions(String opt, String longOpt, String description, boolean mandatory, boolean hasArg) {
         this.opt = opt;
         this.longOpt = longOpt;
         this.description = description;
@@ -63,7 +61,7 @@ public enum ProxyFileOptions {
      */
     public static void createOptionsCLI(Options options) {
 
-        for (ProxyFileOptions option : values()) {
+        for (ListMarkersOptions option : values()) {
 
             options.addOption(option.opt, option.longOpt, option.hasArg, option.description);
 

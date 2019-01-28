@@ -1,8 +1,7 @@
 package no.uib.drs.marc;
 
 import java.io.File;
-import no.uib.drs.model.ScoringFeature;
-import no.uib.drs.model.score.RiskScore;
+import no.uib.drs.cmd.ListMarkers;
 
 /**
  *
@@ -18,14 +17,11 @@ public class Test {
     public static void main(String[] args) {
 
         File scoreFile = new File("resources/scores/T1D-GRS2");
+        File destinationFile = new File("docs/T1D-GRS2_makers");
         
-        RiskScore riskScore = RiskScore.parseRiskScore(scoreFile);
+        String[] cli = new String[]{"-s", scoreFile.getAbsolutePath(), "-o", destinationFile.getAbsolutePath()};
         
-        for (ScoringFeature feature : riskScore.features) {
-            
-            double test = feature.getWeight();
-            
-        }
+        ListMarkers.main(cli);
         
     }
 }

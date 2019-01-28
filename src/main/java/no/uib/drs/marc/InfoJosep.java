@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import no.uib.drs.io.Utils;
 import no.uib.drs.io.flat.SimpleFileReader;
-import no.uib.drs.io.flat.SimpleGzWriter;
+import no.uib.drs.io.flat.SimpleFileWriter;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
 
 /**
@@ -50,7 +50,7 @@ public class InfoJosep {
         File vcfFile = new File("/mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/diabetesGrs.vcf.gz");
         File infoFile = new File("/mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/diabetesGrs.info.gz");
 
-        try (SimpleGzWriter writer = new SimpleGzWriter(infoFile)) {
+        try (SimpleFileWriter writer = new SimpleFileWriter(infoFile, false)) {
 
             writer.writeLine("# Vcf: " + vcfFile.getName());
             writer.writeLine("# Version: " + VariantDetailsProvider.version);

@@ -12,7 +12,7 @@ import no.uib.drs.DiabetesRiskScore;
 import static no.uib.drs.io.Utils.getFileReader;
 import static no.uib.drs.io.Utils.lineSeparator;
 import no.uib.drs.io.flat.SimpleFileReader;
-import no.uib.drs.io.flat.SimpleGzWriter;
+import no.uib.drs.io.flat.SimpleFileWriter;
 import no.uib.drs.io.vcf.VariantDetailsProvider;
 import no.uib.drs.io.vcf.VcfSettings;
 import no.uib.drs.utils.ProgressHandler;
@@ -144,7 +144,7 @@ public class InfoFile {
 
         try (VCFFileReader vcfFileReader = new VCFFileReader(vcfFile)) {
 
-            try (SimpleGzWriter writer = new SimpleGzWriter(destinationFile)) {
+            try (SimpleFileWriter writer = new SimpleFileWriter(destinationFile, true)) {
 
                 writer.writeLine("# Vcf: " + vcfFile.getName());
                 writer.writeLine("# Version: " + VariantDetailsProvider.version);

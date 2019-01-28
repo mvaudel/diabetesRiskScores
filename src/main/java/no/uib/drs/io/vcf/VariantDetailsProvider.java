@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.stream.Collectors;
 import static no.uib.drs.io.Utils.getFileReader;
 import no.uib.drs.io.flat.SimpleFileReader;
-import no.uib.drs.io.flat.SimpleGzWriter;
+import no.uib.drs.io.flat.SimpleFileWriter;
 import no.uib.drs.model.biology.Variant;
 import no.uib.drs.utils.SimpleSemaphore;
 
@@ -105,7 +105,7 @@ public class VariantDetailsProvider {
 
             while ((line = reader.readLine()) != null && !allFound) {
 
-                String[] lineSplit = line.split(SimpleGzWriter.separator);
+                String[] lineSplit = line.split(SimpleFileWriter.separator);
 
                 String chr = lineSplit[0];
                 int bp = Integer.parseInt(lineSplit[1]);
