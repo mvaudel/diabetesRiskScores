@@ -1,4 +1,5 @@
-# Name: Oram_T1D
+# Name: T1D-GRS
+# PMID: 26577414
 # Version: 23.11.18
 SNP	Name	Effect Allele	Weight	Type
 rs2187668,rs7454108	DR3/DR4-DQ8	T|C,C|T	3.87	H
