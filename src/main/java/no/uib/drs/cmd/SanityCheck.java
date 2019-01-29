@@ -115,7 +115,7 @@ public class SanityCheck {
 
         taskName = "1.4 Sanity checks";
         progressHandler.start(taskName);
-        
+
         TreeSet<String> missing = new TreeSet<>();
         TreeSet<String> badImputation = new TreeSet<>();
         TreeMap<String, String> badProxy = new TreeMap<>();
@@ -127,16 +127,19 @@ public class SanityCheck {
             String usedId = proxy == null ? id : proxy.proxyId;
 
             if (variantDetailsProvider.getVariant(usedId) == null) {
+
                 missing.add(usedId);
-            }
 
-            Variant variant = variantDetailsProvider.getVariant(usedId);
+            } else {
 
-            if (!variant.genotyped && !Double.isNaN(scoreThreshld) && variant.imputationScore < scoreThreshld) {
-                if (proxy == null) {
-                    badImputation.add(usedId);
-                } else {
-                    badProxy.put(proxy.proxyId, id);
+                Variant variant = variantDetailsProvider.getVariant(usedId);
+
+                if (!variant.genotyped && !Double.isNaN(scoreThreshld) && variant.imputationScore < scoreThreshld) {
+                    if (proxy == null) {
+                        badImputation.add(usedId);
+                    } else {
+                        badProxy.put(proxy.proxyId, id);
+                    }
                 }
             }
         }
@@ -177,7 +180,7 @@ public class SanityCheck {
             writer.writeLine("# Poor proxy");
             badProxy.entrySet().forEach(entry -> writer.writeLine(entry.getKey(), entry.getValue()));
             writer.newLine();
-            
+
         }
     }
 
