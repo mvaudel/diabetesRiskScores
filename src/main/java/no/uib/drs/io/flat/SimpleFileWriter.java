@@ -85,6 +85,19 @@ public class SimpleFileWriter implements AutoCloseable {
 
     }
 
+    public void newLine() {
+
+        try {
+
+            bw.newLine();
+
+        } catch (IOException e) {
+
+            throw new RuntimeException(e);
+
+        }
+    }
+
     /**
      * Writes some text.
      *
