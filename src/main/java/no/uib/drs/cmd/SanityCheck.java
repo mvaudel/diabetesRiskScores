@@ -164,7 +164,7 @@ public class SanityCheck {
      */
     private static void exportResults(File destinationFile, TreeSet<String> missing, TreeSet<String> badImputation, TreeMap<String, String> badProxy) {
 
-        try (SimpleFileWriter writer = new SimpleFileWriter(destinationFile, true)) {
+        try (SimpleFileWriter writer = new SimpleFileWriter(destinationFile, false)) {
 
             writer.writeLine("# Missing ids");
             missing.forEach(id -> writer.writeLine(id));
