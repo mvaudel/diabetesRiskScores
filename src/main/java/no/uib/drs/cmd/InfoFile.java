@@ -169,12 +169,12 @@ public class InfoFile {
                                     && variantContext.getFilters().contains(vcfSettings.typedFlag)
                                     || !vcfSettings.typedFilter
                                     && variantContext.getAttribute(vcfSettings.typedFlag) != null
-                                    && (boolean) variantContext.getAttribute(vcfSettings.typedFlag)
+                                    && Boolean.parseBoolean(variantContext.getAttribute(vcfSettings.typedFlag).toString())
                                     ? "1" : "0";
 
                             double score = vcfSettings.scoreFlag == null
                                     ? Double.NaN
-                                    : (double) variantContext.getAttribute(vcfSettings.scoreFlag);
+                                    : Double.parseDouble(variantContext.getAttribute(vcfSettings.scoreFlag).toString());
 
                             List<Allele> altAlleles = variantContext.getAlternateAlleles();
 
