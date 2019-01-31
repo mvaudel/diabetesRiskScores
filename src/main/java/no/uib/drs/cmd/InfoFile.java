@@ -165,8 +165,11 @@ public class InfoFile {
                             String ref = variantContext.getReference().getBaseString();
 
                             String typed = vcfSettings.typedFlag == null ? "NA"
-                                    : vcfSettings.typedFilter && variantContext.getFilters().contains(vcfSettings.typedFlag)
-                                    || !vcfSettings.typedFilter && (boolean) variantContext.getAttribute(vcfSettings.typedFlag)
+                                    : vcfSettings.typedFilter
+                                    && variantContext.getFilters().contains(vcfSettings.typedFlag)
+                                    || !vcfSettings.typedFilter
+                                    && variantContext.getAttribute(vcfSettings.typedFlag) != null
+                                    && (boolean) variantContext.getAttribute(vcfSettings.typedFlag)
                                     ? "1" : "0";
 
                             double score = vcfSettings.scoreFlag == null
