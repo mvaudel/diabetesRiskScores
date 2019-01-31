@@ -2,6 +2,7 @@ package no.uib.drs.marc;
 
 import java.io.File;
 import no.uib.drs.cmd.ListMarkers;
+import no.uib.drs.model.score.CdpkScore;
 
 /**
  *
@@ -16,12 +17,7 @@ public class Test {
      */
     public static void main(String[] args) {
 
-        File scoreFile = new File("resources/scores/T1D-GRS2");
-        File destinationFile = new File("docs/T1D-GRS2_makers");
-        
-        String[] cli = new String[]{"-s", scoreFile.getAbsolutePath(), "-o", destinationFile.getAbsolutePath()};
-        
-        ListMarkers.main(cli);
+        CdpkScore riskScore = CdpkScore.parseScore(new File("resources\\scores\\Type2Diabetes_PRS_LDpred_rho0.01_v3.txt.gz"));
         
     }
 }

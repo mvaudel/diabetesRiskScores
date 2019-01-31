@@ -7,6 +7,9 @@ java -cp bin/drs-0.0.1/drs-0.0.1.jar no.uib.drs.marc.InfoJosep
 # Info
 java -cp bin/drs-0.0.1/drs-0.0.1.jar no.uib.drs.cmd.InfoFile 
 
+# Sanity Check
+java -cp bin/drs-0.0.1/drs-0.0.1.jar no.uib.drs.cmd.SanityCheck -s /mnt/work/marc/grs/diabetesRiskScores/resources/scores/T1D-GRS2 -g /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/diabetesGrs.vcf.gz -i /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/diabetesGrs.info.gz -o /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/scores/updated_with_21Kdataset_T1D-GRS2.log
+
 # Score
 java -cp bin/drs-0.0.1/drs-0.0.1.jar no.uib.drs.cmd.ComputeScore -s /mnt/work/marc/grs/diabetesRiskScores/resources/scores/T1D-GRS2 -g /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/diabetesGrs.vcf.gz -i /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/diabetesGrs.info.gz -o /mnt/archive/marc/partners/grs/mgh/updated_with_21Kdataset/scores/updated_with_21Kdataset_T1D-GRS2.gz
 

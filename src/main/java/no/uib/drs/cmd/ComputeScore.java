@@ -154,15 +154,14 @@ public class ComputeScore {
         progressHandler.start(taskName);
 
         ScoreComputer scoreComputer = new ScoreComputer(vcfFiles, variantDetailsProvider);
-        double[] scores = scoreComputer.computeRiskScores(riskScore, proxiesMap);
-        ArrayList<String> sampleNames = scoreComputer.getSampleNames();
+        scoreComputer.computeRiskScores(riskScore, proxiesMap);
 
         progressHandler.end(taskName);
 
         taskName = "1.7 Exporting results";
         progressHandler.start(taskName);
 
-        exportResults(destinationFile, sampleNames, scores);
+        exportResults(destinationFile, scoreComputer.sampleNames, scoreComputer.scores);
 
         progressHandler.end(taskName);
 

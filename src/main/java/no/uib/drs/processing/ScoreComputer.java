@@ -3,13 +3,13 @@ package no.uib.drs.processing;
 import htsjdk.samtools.util.CloseableIterator;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.Genotype;
-import htsjdk.variant.variantcontext.GenotypeType;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -18,6 +18,8 @@ import no.uib.drs.model.ScoringFeature;
 import no.uib.drs.model.score.RiskScore;
 import no.uib.drs.model.biology.Proxy;
 import no.uib.drs.model.biology.Variant;
+import no.uib.drs.model.features.CdpkFeature;
+import no.uib.drs.model.score.CdpkScore;
 import no.uib.drs.utils.SimpleSemaphore;
 
 /**
@@ -30,7 +32,15 @@ public class ScoreComputer {
     /**
      * The ordered sample names as found in a vcf file.
      */
-    private final ArrayList<String> sampleNames;
+    public final ArrayList<String> sampleNames;
+    /**
+     * The scores.
+     */
+    public final double[] scores;
+    /**
+     * Variants that were missing.
+     */
+    public final HashSet<String> missingVariants = new HashSet<>();
     /**
      * The vcf readers linked to the vcf files.
      */
@@ -63,6 +73,8 @@ public class ScoreComputer {
                 .getFileHeader()
                 .getSampleNamesInOrder();
 
+        scores = new double[sampleNames.size()];
+
     }
 
     /**
@@ -70,12 +82,8 @@ public class ScoreComputer {
      *
      * @param riskScore the risk score
      * @param proxiesMap the map of proxies
-     *
-     * @return the risk score for each patient
      */
-    public double[] computeRiskScores(RiskScore riskScore, HashMap<String, Proxy> proxiesMap) {
-
-        final double[] scores = new double[sampleNames.size()];
+    public void computeRiskScores(RiskScore riskScore, HashMap<String, Proxy> proxiesMap) {
 
         final SimpleSemaphore scoreMutex = new SimpleSemaphore(1);
 
@@ -105,7 +113,7 @@ public class ScoreComputer {
                                 String variantId = variantContext.getID();
 
                                 if (variantId.equals(id)) {
-                                    
+
                                     found = true;
 
                                     for (int j = 0; j < sampleNames.size(); j++) {
@@ -137,9 +145,6 @@ public class ScoreComputer {
                     scoreMutex.release();
 
                 });
-
-        return scores;
-
     }
 
     /**
@@ -184,14 +189,103 @@ public class ScoreComputer {
     }
 
     /**
-     * Returns the sample names.
+     * Computes the risk score for all patients in the given vcf files.
      *
-     * @return the sample names
+     * @param riskScore the risk score
      */
-    public ArrayList<String> getSampleNames() {
+    public void computeRiskScores(CdpkScore riskScore) {
 
-        return sampleNames;
+        final HashMap<String, SimpleSemaphore> vcfMutexMap = new HashMap<>(variantDetailsProvider.vcfFileNames.size());
+        variantDetailsProvider.vcfFileNames.forEach(vcfName -> vcfMutexMap.put(vcfName, new SimpleSemaphore(1)));
 
+        final SimpleSemaphore scoreMutex = new SimpleSemaphore(1);
+
+        final SimpleSemaphore missingMutex = new SimpleSemaphore(1);
+
+        riskScore.featureMap.entrySet().stream()
+                .parallel()
+                .forEach(entryChr -> {
+
+                    String chr = entryChr.getKey();
+                    HashMap<Integer, HashMap<String, HashMap<String, CdpkFeature>>> chrMap = entryChr.getValue();
+
+                    chrMap.entrySet().stream()
+                            .parallel()
+                            .forEach(entryBp -> {
+
+                                int bp = entryBp.getKey();
+                                HashMap<String, HashMap<String, CdpkFeature>> bpMap = entryBp.getValue();
+
+                                bpMap.entrySet().forEach(aEntry -> {
+
+                                    String a = aEntry.getKey();
+                                    HashMap<String, CdpkFeature> aMap = aEntry.getValue();
+
+                                    aMap.entrySet().forEach(bEntry -> {
+
+                                        String b = bEntry.getKey();
+                                        CdpkFeature feature = bEntry.getValue();
+                                        String vcfFileName = variantDetailsProvider.getVcfName(chr, bp, a, b);
+
+                                        if (vcfFileName != null) {
+
+                                            VCFFileReader vcfFileReader = vcfFileReaders.get(vcfFileName);
+                                            boolean found = false;
+
+                                            SimpleSemaphore vcfMutex = vcfMutexMap.get(vcfFileName);
+                                            vcfMutex.acquire();
+
+                                            try (CloseableIterator<VariantContext> iterator = vcfFileReader.query(chr, bp, bp)) {
+
+                                                while (iterator.hasNext()) {
+
+                                                    VariantContext variantContext = iterator.next();
+                                                    String ref = variantContext.getReference().getBaseString();
+
+                                                    if (ref.equals(a)) {
+
+                                                        boolean goodAlt = variantContext.getAlternateAlleles().stream()
+                                                                .anyMatch(allele -> allele.getBaseString().equals(b));
+
+                                                        if (goodAlt) {
+
+                                                            found = true;
+
+                                                            IntStream.range(0, sampleNames.size())
+                                                                    .parallel()
+                                                                    .forEach(i -> {
+
+                                                                        Genotype genotypeType = variantContext.getGenotype(i);
+
+                                                                        int n = (int) genotypeType.getAlleles().stream()
+                                                                                .filter(allele -> allele.getBaseString().equals(feature.effectAllele))
+                                                                                .count();
+
+                                                                        scoreMutex.acquire();
+                                                                        scores[i] = scores[i] + (n * feature.weight);
+                                                                        scoreMutex.release();
+
+                                                                    });
+                                                        }
+                                                    }
+                                                }
+
+                                                if (!found) {
+
+                                                    missingMutex.acquire();
+                                                    missingVariants.add(feature.name);
+                                                    missingMutex.release();
+
+                                                }
+                                            }
+
+                                            vcfMutex.release();
+
+                                        }
+                                    });
+                                });
+                            });
+                });
     }
 
     /**

@@ -31,6 +31,10 @@ public class VariantDetailsProvider {
      */
     private final HashMap<String, String> variantFileMap = new HashMap<>();
     /**
+     * Map of the variant coordinates to vcf file name.
+     */
+    private final HashMap<String, HashMap<Integer, HashMap<String, HashMap<String, String>>>> coordinatesFileMap = new HashMap<>();
+    /**
      * Mutex for the edition of the maps.
      */
     private final SimpleSemaphore mutex = new SimpleSemaphore(1);
@@ -42,6 +46,10 @@ public class VariantDetailsProvider {
      * Boolean indicating whether all markers were found.
      */
     private boolean allFound = false;
+    /**
+     * Set of all vcf file names.
+     */
+    public final HashSet<String> vcfFileNames = new HashSet<>();
 
     /**
      * Constructor.
@@ -58,6 +66,15 @@ public class VariantDetailsProvider {
                         id -> false,
                         (a, b) -> a,
                         HashMap::new));
+
+    }
+
+    /**
+     * Constructor.
+     */
+    public VariantDetailsProvider() {
+
+        snpFound = null;
 
     }
 
@@ -83,6 +100,10 @@ public class VariantDetailsProvider {
                 if (key.equalsIgnoreCase("vcf")) {
 
                     vcfName = line.substring(separator + 1).trim();
+                    
+                    mutex.acquire();
+                    vcfFileNames.add(vcfName);
+                    mutex.release();
 
                 } else if (key.equalsIgnoreCase("version")) {
 
@@ -122,6 +143,7 @@ public class VariantDetailsProvider {
 
                 variantDetailsMap.put(id, variant);
                 variantFileMap.put(id, vcfName);
+                addCoordinates(chr, bp, ref, alt, vcfName);
 
                 if (snpFound != null) {
 
@@ -136,6 +158,48 @@ public class VariantDetailsProvider {
 
             }
         }
+    }
+
+    /**
+     * Indexes the file in which the given coordinates can be found.
+     * 
+     * @param chr the chromosome name
+     * @param bp the base pair
+     * @param ref the ref allele
+     * @param alt the alt allele
+     * @param vcfName the vcf name
+     */
+    private void addCoordinates(String chr, int bp, String ref, String alt, String vcfName) {
+
+        HashMap<Integer, HashMap<String, HashMap<String, String>>> chrMap = coordinatesFileMap.get(chr);
+
+        if (chrMap == null) {
+
+            chrMap = new HashMap<>();
+            coordinatesFileMap.put(chr, chrMap);
+
+        }
+
+        HashMap<String, HashMap<String, String>> bpMap = chrMap.get(bp);
+
+        if (bpMap == null) {
+
+            bpMap = new HashMap<>(1);
+            chrMap.put(bp, bpMap);
+
+        }
+
+        HashMap<String, String> refMap = bpMap.get(ref);
+
+        if (refMap == null) {
+
+            refMap = new HashMap<>(1);
+            bpMap.put(ref, refMap);
+
+        }
+
+        refMap.put(alt, vcfName);
+
     }
 
     /**
@@ -158,6 +222,40 @@ public class VariantDetailsProvider {
      */
     public String getVcfName(String id) {
         return variantFileMap.get(id);
+    }
+
+    /**
+     * Returns the name of the vcf file where the given variant can be found.
+     *
+     * @param chr the chromosome name
+     * @param bp the base pair
+     * @param ref the ref allele
+     * @param alt the alt allele
+     *
+     * @return the name of the vcf file where the given variant can be found
+     */
+    public String getVcfName(String chr, int bp, String ref, String alt) {
+        
+        HashMap<Integer, HashMap<String, HashMap<String, String>>> chrMap = coordinatesFileMap.get(chr);
+        
+        if (chrMap == null) {
+            return null;
+        }
+        
+        HashMap<String, HashMap<String, String>> bpMap = chrMap.get(bp);
+        
+        if (bpMap == null) {
+            return null;
+        }
+        
+        HashMap<String, String> refMap = bpMap.get(ref);
+        
+        if (refMap == null) {
+            return null;
+        }
+        
+        return refMap.get(alt);
+        
     }
 
 }
